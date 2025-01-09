@@ -48,7 +48,7 @@ class Downloader:
 
         # Check if URL contains branch name
 
-        branch = self.__get_branch_from_url(url, branch)
+        self.branch = self.__get_branch_from_url(url, branch)
 
         # Convert URL to match GitHub API URI
 
@@ -58,13 +58,13 @@ class Downloader:
         # Make GET Request
 
         api = requests.get(tmp_url).text
-        files = json.loads(api)
+        self.files = json.loads(api)
 
         # Turn the API Data into List
 
         output = []
         location = dict()
-        for k, i in enumerate(files["tree"]):
+        for k, i in enumerate(self.files["tree"]):
             if i["type"] == "blob":
                 tmp = [i["path"]]
 
@@ -74,8 +74,8 @@ class Downloader:
                 output.append(tmp)
             else:
                 location[i["path"]] = k
-        self.files = output
-        self.location = location
+        # self.files = output
+        # self.location = location
 
         # Set Repo URL for memoization
 
@@ -98,8 +98,14 @@ class Downloader:
         self.__mkdirs(destination)
 
         # Find Folder Position
+        final_list = []
         if target_folder == "*":
-            start = 0
+            for i in self.files["tree"]:
+                if i["type"] == "blob":
+                    tmp = [i["path"]]
+                    # Get RAW URL
+                    tmp += [self.__get_raw_url(tmp[0], i["url"], self.branch)]
+                    final_list.append(tmp)
         else:
             # Remove Relative Path Symbol from string
             tmp_target = target_folder.replace("./", "")
@@ -107,14 +113,13 @@ class Downloader:
 
             # Remove "/"
             tmp_target = tmp_target if tmp_target[-1] != "/" else tmp_target[:-1]
-            start = self.location[target_folder]
-
+            for i in self.files["tree"]:
+                if i["type"] == "blob" and str(i["path"]).startswith(tmp_target):
+                    tmp = [i["path"]]
+                    # Get RAW URL
+                    tmp += [self.__get_raw_url(tmp[0], i["url"], self.branch)]
+                    final_list.append(tmp)
         # Start Downloading with progress bar
-        final_list = [
-            i
-            for i in self.files[start:]
-            if i[0].find(target_folder + "/") == 0 or target_folder == "*"
-        ]
         total_files = len(final_list)
         with tqdm(
             total=total_files,
@@ -123,12 +128,12 @@ class Downloader:
             dynamic_ncols=True,
             leave=True,
         ) as pbar:
-            for i in final_list:
-                if (recursive or i[0].split(target_folder)[1].count("/") <= 1) and (
-                    str(i[0]).find(target_folder) == 0 or target_folder == "*"
-                ):
-                    self.__mkdirs(str(Path(destination)) + "/" + os.path.dirname(i[0]))
-                    urllib.request.urlretrieve(
-                        (i[1]).replace(" ", "%20"), str(Path(destination)) + "/" + i[0]
-                    )
-                    pbar.update(1)
+            for path, url in final_list:
+                # if (recursive or i[0].split(target_folder)[1].count("/") <= 1) and (
+                #     str(i[0]).find(target_folder) == 0 or target_folder == "*"
+                # ):
+                self.__mkdirs(str(Path(destination)) + "/" + os.path.dirname(path))
+                urllib.request.urlretrieve(
+                    (url).replace(" ", "%20"), str(Path(destination)) + "/" + path
+                )
+                pbar.update(1)
