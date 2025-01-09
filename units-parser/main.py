@@ -115,17 +115,57 @@ with open(names_details_path, "r") as f:
 
 
 # Recursive function to parse Lua files and build tree
-def parse_units_folder(folder, path=[]):
-    print(path)
+def parse_units_folder(folder, path: list[str] = []):
     for item in folder.iterdir():
+        item: Path = item
         if item.is_dir():
-            parse_units_folder(item, path + [item.name])
+            print(path + [item.stem])
+            parse_units_folder(item, path + [item.stem])
         elif item.suffix == ".lua":
             unit_data = parse_lua_file(item)
             if unit_data:
+                faction = "other"
+                unit_type = "other"
+                tech_level = 1
+
+                if len(path) > 0 and path[0].startswith("Arm"):
+                    faction = "arm"
+                    unit_type = path[0][3:].lower()
+                elif len(path) > 0 and path[0].startswith("Cor"):
+                    faction = "cor"
+                    unit_type = path[0][3:].lower()
+                # elif path[0] == "Legion":
+                #     faction = "leg"
+                #     type = path[1].lower()
+
+                # print(item.stem)
+                if (
+                    type(unit_data) is dict
+                    and item.stem in unit_data
+                    and "techlevel" in unit_data[item.stem]["customparams"]
+                ):
+                    tech_level = unit_data[item.stem]["customparams"]["techlevel"]
+
+                if faction is not "other":
+                    print(
+                        "["
+                        + str(item.stem).center(20)
+                        + "]   ["
+                        + str(faction).center(10)
+                        + "]   ["
+                        + str(unit_type).center(10)
+                        + "]   [T"
+                        + str(tech_level).center(10)
+                        + "]"
+                    )
+
                 units_data.append(
                     {
-                        "path": "/".join(path + [item.name]),
+                        "name": item.stem,
+                        "faction": faction,
+                        "type": unit_type,
+                        "tech_level": tech_level,
+                        "path": path + [item.stem],
                         "data": unit_data,
                     }
                 )
