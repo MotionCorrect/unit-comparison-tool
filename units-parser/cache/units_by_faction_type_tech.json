@@ -1807,10 +1807,16 @@
                         "name": "legstarfall"
                     },
                     {
+                        "name": "legafus"
+                    },
+                    {
                         "name": "legageo"
                     },
                     {
                         "name": "legamstor"
+                    },
+                    {
+                        "name": "legfus"
                     },
                     {
                         "name": "legmoho"
@@ -1841,6 +1847,12 @@
                     },
                     {
                         "name": "legaskirmtank"
+                    },
+                    {
+                        "name": "legavjam"
+                    },
+                    {
+                        "name": "legavrad"
                     },
                     {
                         "name": "legavroc"

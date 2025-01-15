@@ -852,6 +852,9 @@
             "name": "legadvsol"
         },
         {
+            "name": "legafus"
+        },
+        {
             "name": "legageo"
         },
         {
@@ -862,6 +865,9 @@
         },
         {
             "name": "legestor"
+        },
+        {
+            "name": "legfus"
         },
         {
             "name": "leggeo"
@@ -1108,6 +1114,12 @@
         },
         {
             "name": "legaskirmtank"
+        },
+        {
+            "name": "legavjam"
+        },
+        {
+            "name": "legavrad"
         },
         {
             "name": "legavroc"
