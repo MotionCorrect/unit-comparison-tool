@@ -3,9 +3,9 @@
 	import { unitsData, factionsList, typesWithSubtypes, unitNamesDetails } from '$lib/data';
 	import { loadData } from '$lib/data';
 	import { onMount } from 'svelte';
-	import Navbar from '$lib/components/Navbar.svelte';
 	import { base } from '$app/paths';
-	
+	import Navbar from '$lib/components/Navbar.svelte';
+
 	let factionsData = {};
 	let unitTypesData = [];
 

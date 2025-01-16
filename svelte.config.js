@@ -1,26 +1,20 @@
-// svelte.config.js
-import adapter from '@sveltejs/adapter-static';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import adapter from '@sveltejs/adapter-auto';
+import { vitePreprocess } from '@sveltejs/kit/vite';
 
-/** @type {import('@sveltejs/kit').Config} */
 const config = {
-	kit: {
-		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/unit-comparison-tool' : ''
-		},
-		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: 'index.html',
-			precompress: false,
-			strict: false
-		}),
-		prerender: {
-			handleHttpError: 'warn',
-			entries: ['*']
-		}
-	},
-	preprocess: vitePreprocess()
+    preprocess: vitePreprocess(),
+
+    kit: {
+        adapter: adapter(),
+        paths: {
+            base: process.env.MANUAL_BUILD === 'true' ? '/sveltekit-github-pages' : '',
+        }
+    }
 };
+
+if (process.env.MANUAL_BUILD === 'true') {
+    console.log('Manual build detected...');
+    // Add any manual build-specific logic here
+}
 
 export default config;
