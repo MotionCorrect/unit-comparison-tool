@@ -4,7 +4,7 @@
 	import { loadData, unitNamesDetails, unitsByFactionTypeTech } from '$lib/data';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { base } from '$app/paths';
-	
+
 	let selectedFaction = 'arm';
 	let graphView = 'factions';
 	let graphContainer;
@@ -249,7 +249,7 @@
 			content = `
 				<div class="p-4 bg-gray-900/95 rounded-lg shadow-xl">
 					<div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-700">
-						<a href="{base}/unit/${d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${d.name}</a>
+						<a href="${base}/unit?name=${d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${d.name}</a>
 						<span class="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full uppercase tracking-wide">${d.group}</span>
 					</div>
 					<div class="space-y-4">
@@ -266,7 +266,7 @@
 							<span class="text-gray-400">Tech Level</span>
 							<span class="text-white font-medium">${d.tech}</span>
 						</div>
-						<a href="{base}/unit/${d.dbName}" 
+						<a href="${base}/unit?name=${d.dbName}" 
 							class="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium text-center">
 							View Unit Details
 						</a>
@@ -451,27 +451,28 @@
 				// Scale text size based on node type
 				switch (d.group) {
 					case 'faction':
-						return '24px';
+						return '25px';
 					case 'type':
-						return '18px';
+						return '20px';
 					case 'subType':
-						return '14px';
+						return '17px';
 					case 'tech':
-						return '12px';
+						return '15px';
 					case 'unit':
-						return '10px';
+						return '12px';
 					default:
-						return '10px';
+						return '12px';
 				}
 			})
 			.attr('text-anchor', 'middle')
 			.attr('dominant-baseline', 'central')
+			// .attr('stroke', '#fff')
+			// .attr('stroke-width', (d) => {
+			// 	// Adjust stroke width based on text size
+			// 	return d.group === 'faction' ? 0.5 : d.group === 'type' ? 0.5 : 0.5;
+			// })
 			.attr('fill', (d) => color(d.group))
-			.attr('stroke', '#fff')
-			.attr('stroke-width', (d) => {
-				// Adjust stroke width based on text size
-				return d.group === 'faction' ? 0.5 : d.group === 'type' ? 0.4 : 0.3;
-			})
+			.style('font-weight', 'bold')
 			.style('cursor', 'pointer') // Add pointer cursor
 			.on('click', (event, d) => {
 				// Prevent default click behavior for non-unit nodes
@@ -483,7 +484,7 @@
 			.each(function (d) {
 				if (d.group === 'unit') {
 					const parent = d3.select(this);
-					const link = parent.append('a').attr('href', `/unit/${d.dbName}`);
+					const link = parent.append('a').attr('href', `${base}/unit?name=${d.dbName}`);
 					link.node().appendChild(this.firstChild);
 				}
 			})

@@ -626,7 +626,7 @@
 
 	function showNotification(message, type = 'success') {
 		notifications = [...notifications, { message, type, id: Date.now() }];
-		if (notificationTimeout) clearTimeout(notificationTimeout);
+		// if (notificationTimeout) clearTimeout(notificationTimeout);
 		notificationTimeout = setTimeout(() => {
 			notifications = notifications.slice(1);
 		}, 3000);
@@ -982,7 +982,7 @@
 															{selectedUnits.includes(unit.id) ? 'Remove' : 'Compare'}
 														</span>
 													</button>
-													<a href="{base}/unit/{unit.id}" class="text-teal-400 hover:underline">
+													<a href="{base}/unit?name={unit.id}" class="text-teal-400 hover:underline">
 														{unit.name}
 													</a>
 												</div>
@@ -1121,7 +1121,7 @@
 											{#if unit}
 												<div class="space-y-1">
 													<a
-														href="{base}/unit/{unit.id}"
+														href="{base}/unit?name={unit.id}"
 														class="inline-block font-medium text-white transition-colors hover:text-teal-400"
 													>
 														{unit.name}
