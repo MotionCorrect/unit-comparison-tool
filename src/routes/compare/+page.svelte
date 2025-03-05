@@ -314,6 +314,13 @@
 		}
 	});
 
+	// Fullscreen functionality
+	let isFullScreen = false;
+
+	function toggleFullScreen() {
+		isFullScreen = !isFullScreen;
+	}
+
 	function formatDeepObject(obj, depth = 0) {
 		if (depth > 3 || typeof obj !== 'object' || obj === null) {
 			return formatValue(obj);
@@ -633,6 +640,33 @@
 	}
 </script>
 
+<style>
+	.fullscreen-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		z-index: 50;
+		background-color: rgb(17, 24, 39);
+		padding: 1rem;
+		overflow: auto;
+	}
+	
+	.fullscreen-table {
+		height: calc(100vh - 3rem); /* Account for the button height */
+		overflow: auto;
+	}
+	
+	.fullscreen-container .table-controls {
+		position: sticky;
+		top: 0;
+		z-index: 60;
+		padding: 0.5rem 0;
+		background-color: rgb(17, 24, 39);
+	}
+</style>
+
 <div class="min-h-screen bg-gray-900 text-gray-100">
 	<Navbar />
 	<div class="container mx-auto max-w-7xl px-4 py-8">
@@ -901,8 +935,26 @@
 				</div>
 
 				<!-- Results Table Container -->
-				<div class="relative">
-					<div class="overflow-x-auto max-h-[70vh]">
+				<div class="relative {isFullScreen ? 'fullscreen-container' : ''}">
+					<div class="table-controls flex justify-end mb-2">
+						<button
+							on:click={toggleFullScreen}
+							class="flex items-center gap-2 rounded-lg bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+							aria-label={isFullScreen ? "Exit fullscreen" : "Enter fullscreen"}
+						>
+							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								{#if isFullScreen}
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5" />
+								{:else}
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" />
+								{/if}
+							</svg>
+							{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+						</button>
+					</div>
+					<div class="overflow-x-auto {isFullScreen ? 'fullscreen-table' : 'max-h-[70vh]'}" id="browse-table-container">
 						<table class="relative w-full">
 							<thead>
 								<tr class="sticky top-0 z-20 border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm">
