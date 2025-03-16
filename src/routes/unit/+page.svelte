@@ -5,6 +5,7 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
+	import { processWeapons, getUnitCombatStats, isSuicideUnit, isMineUnit } from '$lib/dpsCalculations';
 
 	const name = $page.url.searchParams.get('name');
 
@@ -25,39 +26,8 @@
 		}
 	});
 
-	function processWeapons(weapondefs) {
-		return Object.entries(weapondefs).map(([key, weapon]) => {
-			// Process damage values
-			const damageValues = weapon.damage
-				? Object.entries(weapon.damage).map(([type, value]) => ({
-						type: type === 'default' ? 'Base' : type,
-						value: Number(value) || 0
-					}))
-				: [];
-
-			const maxDamage = damageValues.length > 0 ? Math.max(...damageValues.map((d) => d.value)) : 0;
-
-			// Calculate DPS
-			const dps = maxDamage / (weapon.reloadtime || 1);
-
-			return {
-				name: weapon.name || key,
-				type: weapon.weapontype || 'Unknown',
-				damage: maxDamage,
-				maxDamage,
-				dps: dps.toFixed(1),
-				range: weapon.range || 0,
-				reloadTime: weapon.reloadtime || 1
-			};
-		});
-	}
-
-	function getUnitCombatStats(weapons) {
-		if (!weapons?.length) return null;
-		return {
-			totalDps: weapons.reduce((sum, w) => sum + Number(w.dps), 0).toFixed(1),
-			maxRange: Math.max(...weapons.map((w) => w.range))
-		};
+	function getCombatStats() {
+		return getUnitCombatStats(weaponsData, unitData, name);
 	}
 
 	// Dynamically group data based on categories
@@ -329,6 +299,11 @@
 						>
 							Tech {unit.tech_level}
 						</span>
+						{#if isSuicideUnit(unitData)}
+							<span class="rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-400">
+								{isMineUnit(unitData) ? 'Mine' : 'Suicide Unit'}
+							</span>
+						{/if}
 					</div>
 				</header>
 
@@ -472,8 +447,8 @@
 							<div class="mt-8 border-t border-gray-700/50 pt-6">
 								<div class="mb-4 flex items-center justify-between">
 									<h3 class="text-lg font-semibold text-white">Weapons</h3>
-									{#if getUnitCombatStats(weaponsData)}
-										{@const combatStats = getUnitCombatStats(weaponsData)}
+									{#if getCombatStats()}
+										{@const combatStats = getCombatStats()}
 										<div class="flex gap-4">
 											<span
 												class="rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-400"
@@ -494,6 +469,16 @@
 											class="rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 transition-colors hover:bg-gray-700/50"
 										>
 											<h3 class="mb-2 font-medium text-white">{weapon.type}</h3>
+											{#if weapon.isEMP}
+												<div class="mb-2 rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-medium text-yellow-400 inline-block">
+													EMP Weapon
+												</div>
+											{/if}
+											{#if weapon.isNotFlame}
+												<div class="mb-2 rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-400 inline-block">
+													Special Weapon
+												</div>
+											{/if}
 											<div class="space-y-3 text-sm">
 												<div class="flex justify-between">
 													<span class="text-gray-400">Damage</span>
@@ -501,8 +486,22 @@
 												</div>
 												<div class="flex justify-between">
 													<span class="text-gray-400">DPS</span>
-													<span class="font-medium text-orange-400">{weapon.dps}</span>
+													<span class="font-medium text-orange-400">
+														{#if weapon.isEMP}
+															N/A (EMP)
+														{:else if weapon.isNotFlame}
+															N/A (Special)
+														{:else}
+															{weapon.dps}
+														{/if}
+													</span>
 												</div>
+												{#if weapon.burstCount > 1}
+												<div class="flex justify-between">
+													<span class="text-gray-400">Burst</span>
+													<span class="font-medium text-green-400">x{weapon.burstCount}</span>
+												</div>
+												{/if}
 												<div class="flex justify-between">
 													<span class="text-gray-400">Range</span>
 													<span class="font-medium text-blue-400">{weapon.range}</span>

@@ -4,6 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
 	import { base } from '$app/paths';
+	import { processWeapons, getUnitCombatStats, isSuicideUnit, isMineUnit } from '$lib/dpsCalculations';
 	// View mode state
 	let viewMode = 'browse'; // 'compare' or 'browse'
 
@@ -335,59 +336,85 @@
 	}
 
 	// Process weapons data
-	function processWeapons(weapondefs) {
-		if (!weapondefs) return [];
-		return Object.entries(weapondefs).map(([key, weapon]) => {
-			// Process damage values
-			const damageValues = weapon.damage
-				? Object.entries(weapon.damage).map(([type, value]) => ({
-						type: type === 'default' ? 'Base' : type,
-						value: Number(value || 0).toFixed(1)
-					}))
-				: [];
+	// REMOVE: function processWeapons(weapondefs) {
+	// REMOVE: 	if (!weapondefs) return [];
+	// REMOVE: 	return Object.entries(weapondefs).map(([key, weapon]) => {
+	// REMOVE: 		// Process damage values
+	// REMOVE: 		const damageValues = weapon.damage
+	// REMOVE: 			? Object.entries(weapon.damage).map(([type, value]) => ({
+	// REMOVE: 					type: type === 'default' ? 'Base' : type,
+	// REMOVE: 					value: Number(value || 0).toFixed(1)
+	// REMOVE: 				}))
+	// REMOVE: 			: [];
+	// REMOVE: 
+	// REMOVE: 		const maxDamage =
+	// REMOVE: 			damageValues.length > 0
+	// REMOVE: 				? Number(Math.max(...damageValues.map((d) => Number(d.value)))).toFixed(1)
+	// REMOVE: 				: '0.0';
+	// REMOVE: 
+	// REMOVE: 		// Check if weapon is an EMP/paralyzer
+	// REMOVE: 		const isEMP = weapon.paralyzer === 'Yes' || weapon.paralyzer === true;
+	// REMOVE: 
+	// REMOVE: 		// Check if weapon is a notFlame type (should be excluded from DPS)
+	// REMOVE: 		const isNotFlame = weapon.weapontype === 'notFlame';
+	// REMOVE: 
+	// REMOVE: 		// Get burst count if exists
+	// REMOVE: 		const burstCount = weapon.burst ? Number(weapon.burst) : 1;
+	// REMOVE: 
+	// REMOVE: 		// Calculate DPS, but set to 0 for EMP weapons and notFlame weapons
+	// REMOVE: 		const dps = isEMP || isNotFlame ? '0.0' : (Number(maxDamage) * burstCount / (weapon.reloadtime || 1)).toFixed(1);
+	// REMOVE: 
+	// REMOVE: 		return {
+	// REMOVE: 			name: weapon.name || key,
+	// REMOVE: 			type: weapon.weapontype || 'Unknown',
+	// REMOVE: 			damage: maxDamage,
+	// REMOVE: 			maxDamage,
+	// REMOVE: 			dps: dps,
+	// REMOVE: 			range: Number(weapon.range || 0).toFixed(1),
+	// REMOVE: 			reloadTime: Number(weapon.reloadtime || 1).toFixed(1),
+	// REMOVE: 			isEMP,
+	// REMOVE: 			isNotFlame,
+	// REMOVE: 			burstCount
+	// REMOVE: 		};
+	// REMOVE: 	});
+	// REMOVE: }
 
-			const maxDamage =
-				damageValues.length > 0
-					? Number(Math.max(...damageValues.map((d) => Number(d.value)))).toFixed(1)
-					: '0.0';
-
-			// Calculate DPS
-			const dps = (Number(maxDamage) / (weapon.reloadtime || 1)).toFixed(1);
-
-			return {
-				name: weapon.name || key,
-				type: weapon.weapontype || 'Unknown',
-				damage: maxDamage,
-				maxDamage,
-				dps: dps,
-				range: Number(weapon.range || 0).toFixed(1),
-				reloadTime: Number(weapon.reloadtime || 1).toFixed(1)
-			};
-		});
-	}
-
-	function getUnitCombatStats(weapons) {
-		if (!weapons?.length) return null;
-		return {
-			totalDps: Number(weapons.reduce((sum, w) => sum + Number(w.dps), 0)).toFixed(1),
-			maxRange: Number(Math.max(...weapons.map((w) => w.range))).toFixed(1)
-		};
-	}
+	// REMOVE: function getUnitCombatStats(weapons) {
+	// REMOVE: 	if (!weapons?.length) return null;
+	// REMOVE: 	
+	// REMOVE: 	// For suicide units, we use a predefined DPS value
+	// REMOVE: 	// This depends on having the unitId, which we can only get from the parent scope
+	// REMOVE: 	// We'll check for this in the selectedUnitsData computation instead
+	// REMOVE: 	return {
+	// REMOVE: 		totalDps: Number(weapons.reduce((sum, w) => sum + Number(w.dps), 0)).toFixed(1),
+	// REMOVE: 		maxRange: Number(Math.max(...weapons.map((w) => w.range))).toFixed(1)
+	// REMOVE: 	};
+	// REMOVE: }
 
 	$: comparableProperties = getComparableProperties(selectedUnits);
-	$: selectedUnitsData = selectedUnits.map((id) =>
-		id
-			? {
-					id,
-					name: $unitNamesDetails?.units?.names?.[id] || id,
-					data: $unitsData?.[id]?.data?.[id] || {},
-					faction: $unitsData?.[id]?.faction,
-					type: $unitsData?.[id]?.type,
-					weapons: processWeapons($unitsData?.[id]?.data?.[id]?.weapondefs),
-					tech: $unitsData?.[id]?.tech_level
-				}
-			: null
-	);
+	$: selectedUnitsData = selectedUnits.map((id) => {
+		if (!id) return null;
+		
+		const unitData = $unitsData?.[id]?.data?.[id] || {};
+		const weapons = processWeapons(unitData?.weapondefs);
+		
+		// Calculate combat stats using the centralized function
+		const combatStats = getUnitCombatStats(weapons, unitData, id);
+		
+		return {
+			id,
+			name: $unitNamesDetails?.units?.names?.[id] || id,
+			data: unitData,
+			faction: $unitsData?.[id]?.faction,
+			type: $unitsData?.[id]?.type,
+			subtype: $unitsData?.[id]?.subtype,
+			weapons: weapons,
+			combatStats: combatStats,
+			tech: $unitsData?.[id]?.tech_level,
+			isSuicideUnit: isSuicideUnit(unitData),
+			isMineUnit: isMineUnit(unitData)
+		};
+	});
 
 	function getCategoryStyle(category) {
 		const styles = {
@@ -423,32 +450,37 @@
 
 		let units = Object.entries($unitsData)
 			.filter(([_, unit]) => unit.type && unit.type !== 'other')
-			.map(([id, unit]) => ({
-				id,
-				name: $unitNamesDetails.units.names[id] || id,
-				type: unit.type,
-				subtype: unit.subtype,
-				tech: unit.tech_level,
-				faction: unit.faction,
-				health: unit.data?.[id]?.maxdamage || 0,
-				sightDistance: unit.data?.[id]?.sightdistance || 0,
-				maxRange: Math.max(
-					...processWeapons(unit.data?.[id]?.weapondefs || {}).map((w) => Number(w.range) || 0),
-					0
-				),
-				dps: processWeapons(unit.data?.[id]?.weapondefs || {}).reduce(
-					(sum, w) => sum + Number(w.dps),
-					0
-				),
-				armor: unit.data?.[id]?.armor || 0,
-				// Add all other properties from unit.data[id] that might be needed for custom filters
-				...Object.fromEntries(
-					Object.entries(unit.data?.[id] || {}).map(([key, value]) => [
-						key,
-						typeof value === 'object' ? JSON.stringify(value) : value
-					])
-				)
-			}))
+			.map(([id, unit]) => {
+				// Process weapons using the centralized function
+				const unitData = unit.data?.[id] || {};
+				const weapons = processWeapons(unitData?.weapondefs);
+				
+				// Calculate combat stats using the centralized function
+				const combatStats = getUnitCombatStats(weapons, unitData, id);
+				
+				return {
+					id,
+					name: $unitNamesDetails.units.names[id] || id,
+					type: unit.type,
+					subtype: unit.subtype,
+					tech: unit.tech_level,
+					faction: unit.faction,
+					health: unitData?.maxdamage || 0,
+					sightDistance: unitData?.sightdistance || 0,
+					maxRange: combatStats?.maxRange || 0,
+					dps: combatStats?.totalDps || 0,
+					isSuicideUnit: isSuicideUnit(unitData),
+					isMineUnit: isMineUnit(unitData),
+					armor: unitData?.armor || 0,
+					// Add all other properties from unit.data[id] that might be needed for custom filters
+					...Object.fromEntries(
+						Object.entries(unitData || {}).map(([key, value]) => [
+							key,
+							typeof value === 'object' ? JSON.stringify(value) : value
+						])
+					)
+				};
+			})
 			// Apply basic filters
 			.filter((unit) => {
 				if (selectedTech !== 'all' && unit.tech !== parseInt(selectedTech)) return false;
@@ -502,6 +534,10 @@
 
 			// Sort strings case-insensitively
 			if (typeof aValue === 'string' && typeof bValue === 'string') {
+				// Check if these are actually numeric values stored as strings (like DPS)
+				if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
+					return (Number(aValue) - Number(bValue)) * modifier;
+				}
 				return aValue.toLowerCase().localeCompare(bValue.toLowerCase()) * modifier;
 			}
 
@@ -1061,6 +1097,13 @@
 													>
 														T{unit.tech}
 													</span>
+													{#if unit.isSuicideUnit}
+														<span
+															class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400"
+														>
+															{unit.isMineUnit ? 'Mine' : 'Suicide'}
+														</span>
+													{/if}
 												</div>
 											</div>
 										</td>
@@ -1193,6 +1236,11 @@
 														<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
 															Tech {unit.tech}
 														</span>
+														{#if unit?.isSuicideUnit}
+															<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
+																{unit.isMineUnit ? 'Mine' : 'Suicide'}
+															</span>
+														{/if}
 													</div>
 												</div>
 											{:else}
@@ -1241,18 +1289,17 @@
 														<td class="p-4 align-top">
 															<div class="top-0 rounded-lg bg-gray-800/50 p-4">
 																{#if unit?.weapons?.length > 0}
-																	{#if getUnitCombatStats(unit.weapons)}
-																		{@const combatStats = getUnitCombatStats(unit.weapons)}
+																	{#if unit.combatStats}
 																		<div class="flex justify-center gap-2 text-sm">
 																			<span
 																				class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400"
 																			>
-																				DPS: {combatStats.totalDps}
+																				DPS: {unit.combatStats.totalDps}
 																			</span>
 																			<span
 																				class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400"
 																			>
-																				Range: {combatStats.maxRange}
+																				Range: {unit.combatStats.maxRange}
 																			</span>
 																		</div>
 																	{/if}
@@ -1263,6 +1310,16 @@
 																			>
 																				<div class="mb-2 font-medium text-gray-300">
 																					{weapon.type}
+																					{#if weapon.isEMP}
+																						<span class="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
+																							EMP
+																						</span>
+																					{/if}
+																					{#if weapon.isNotFlame}
+																						<span class="ml-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-400">
+																							Special
+																						</span>
+																					{/if}
 																				</div>
 																				<div class="grid grid-cols-2 gap-2 text-sm">
 																					<div class="flex justify-between">
@@ -1274,9 +1331,23 @@
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">DPS</span>
 																						<span class="font-medium text-orange-400"
-																							>{weapon.dps}</span
+																							>{#if weapon.isEMP}
+																								N/A (EMP)
+																							{:else if weapon.isNotFlame}
+																								N/A (Special)
+																							{:else}
+																								{weapon.dps}
+																							{/if}</span
 																						>
 																					</div>
+																					{#if weapon.burstCount > 1}
+																					<div class="flex justify-between">
+																						<span class="text-gray-400">Burst</span>
+																						<span class="font-medium text-green-400"
+																							>x{weapon.burstCount}</span
+																						>
+																					</div>
+																					{/if}
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Range</span>
 																						<span class="font-medium text-blue-400"
