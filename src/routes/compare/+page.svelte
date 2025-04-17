@@ -5,6 +5,7 @@
 	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
 	import { base } from '$app/paths';
 	import { processWeapons, getUnitCombatStats, isSuicideUnit, isMineUnit } from '$lib/dpsCalculations';
+	import { getDisplayName, formatValueWithContext } from '$lib/propertyDisplay';
 	// View mode state
 	let viewMode = 'browse'; // 'compare' or 'browse'
 
@@ -19,7 +20,7 @@
 		{ id: 'sightDistance', name: 'Sight Range', visible: true },
 		{ id: 'maxRange', name: 'Weapon Range', visible: true },
 		{ id: 'dps', name: 'DPS', visible: true },
-		{ id: 'armor', name: 'Armor', visible: true }
+		{ id: 'armor_type', name: 'Armor', visible: true }
 	];
 
 	// Browsing filters
@@ -176,7 +177,7 @@
 			fields: [
 				...statsProperties.map((prop) => ({
 					id: prop,
-					name: prop.charAt(0).toUpperCase() + prop.slice(1),
+					name: getDisplayName(prop),
 					type: 'number'
 				}))
 			]
@@ -186,7 +187,7 @@
 			fields: [
 				...combatProperties.map((prop) => ({
 					id: prop,
-					name: prop.charAt(0).toUpperCase() + prop.slice(1),
+					name: getDisplayName(prop),
 					type: 'number'
 				}))
 			]
@@ -196,7 +197,7 @@
 			fields: [
 				...movementProperties.map((prop) => ({
 					id: prop,
-					name: prop.charAt(0).toUpperCase() + prop.slice(1),
+					name: getDisplayName(prop),
 					type: 'number'
 				}))
 			]
@@ -206,7 +207,7 @@
 			fields: [
 				...resourceProperties.map((prop) => ({
 					id: prop,
-					name: prop.charAt(0).toUpperCase() + prop.slice(1),
+					name: getDisplayName(prop),
 					type: 'number'
 				}))
 			]
@@ -246,7 +247,7 @@
 		const properties = new Set();
 		units.forEach((unitId) => {
 			if (!unitId) return;
-			const unit = $unitsData[unitId];
+			const unit = $unitsData?.[unitId];
 			if (!unit?.data?.[unitId]) return;
 			Object.keys(unit.data[unitId]).forEach((key) => properties.add(key));
 		});
@@ -287,11 +288,11 @@
 		};
 	}
 
-	function toggleExpanded(field) {
-		if (expandedFields.has(field)) {
-			expandedFields.delete(field);
+	function toggleExpanded(prop) {
+		if (expandedFields.has(prop)) {
+			expandedFields.delete(prop);
 		} else {
-			expandedFields.add(field);
+			expandedFields.add(prop);
 		}
 		expandedFields = expandedFields; // Trigger reactivity
 	}
@@ -402,11 +403,11 @@
 		const combatStats = getUnitCombatStats(weapons, unitData, id);
 		
 		return {
-			id,
-			name: $unitNamesDetails?.units?.names?.[id] || id,
+					id,
+					name: $unitNamesDetails?.units?.names?.[id] || id,
 			data: unitData,
-			faction: $unitsData?.[id]?.faction,
-			type: $unitsData?.[id]?.type,
+					faction: $unitsData?.[id]?.faction,
+					type: $unitsData?.[id]?.type,
 			subtype: $unitsData?.[id]?.subtype,
 			weapons: weapons,
 			combatStats: combatStats,
@@ -430,7 +431,7 @@
 
 	function getCategoryIcon(category) {
 		const icons = {
-			general: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+			general: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0114 0z',
 			stats:
 				'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
 			movement:
@@ -459,12 +460,12 @@
 				const combatStats = getUnitCombatStats(weapons, unitData, id);
 				
 				return {
-					id,
-					name: $unitNamesDetails.units.names[id] || id,
-					type: unit.type,
-					subtype: unit.subtype,
-					tech: unit.tech_level,
-					faction: unit.faction,
+				id,
+				name: $unitNamesDetails.units.names[id] || id,
+				type: unit.type,
+				subtype: unit.subtype,
+				tech: unit.tech_level,
+				faction: unit.faction,
 					health: unitData?.maxdamage || 0,
 					sightDistance: unitData?.sightdistance || 0,
 					maxRange: combatStats?.maxRange || 0,
@@ -472,13 +473,13 @@
 					isSuicideUnit: isSuicideUnit(unitData),
 					isMineUnit: isMineUnit(unitData),
 					armor: unitData?.armor || 0,
-					// Add all other properties from unit.data[id] that might be needed for custom filters
-					...Object.fromEntries(
+				// Add all other properties from unit.data[id] that might be needed for custom filters
+				...Object.fromEntries(
 						Object.entries(unitData || {}).map(([key, value]) => [
-							key,
-							typeof value === 'object' ? JSON.stringify(value) : value
-						])
-					)
+						key,
+						typeof value === 'object' ? JSON.stringify(value) : value
+					])
+				)
 				};
 			})
 			// Apply basic filters
@@ -597,10 +598,22 @@
 	// Add column dialog instead of native select
 	function addNewColumn() {
 		const dialog = document.createElement('dialog');
-		dialog.className = 'bg-gray-900 rounded-lg p-4 backdrop:bg-black/50';
+		dialog.className = 'bg-gray-900 rounded-lg p-6 backdrop:bg-black/50 max-w-7xl';
 
+		const header = document.createElement('div');
+		header.className = 'mb-4 border-b border-gray-700 pb-3';
+		header.innerHTML = `
+			<h2 class="text-xl font-semibold text-white">Add Columns to Table</h2>
+			<p class="text-sm text-gray-400 mt-1">Select columns to add to your comparison view</p>
+		`;
+		
 		const content = document.createElement('div');
 		content.className = 'max-h-[60vh] overflow-auto';
+
+		// Create a grid container for the categories
+		const categoriesGrid = document.createElement('div');
+		categoriesGrid.className = 'grid grid-cols-4 gap-6';
+		content.appendChild(categoriesGrid);
 
 		availableFields.forEach((category) => {
 			const fields = category.fields.filter((field) => !columns.some((col) => col.id === field.id));
@@ -608,8 +621,13 @@
 				const section = document.createElement('div');
 				section.className = 'mb-4';
 				section.innerHTML = `
-					<h3 class="text-white font-medium mb-2">${category.category}</h3>
-					<div class="space-y-2">
+					<h3 class="text-white font-medium mb-2 flex items-center gap-2">
+						<svg class="h-5 w-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${getCategoryIcon(category.category.toLowerCase())}"></path>
+						</svg>
+						${category.category}
+					</h3>
+					<div class="space-y-1 border rounded-lg border-gray-700/50 bg-gray-800/30 p-2">
 						${fields
 							.map(
 								(field) => `
@@ -622,17 +640,18 @@
 							.join('')}
 					</div>
 				`;
-				content.appendChild(section);
+				categoriesGrid.appendChild(section);
 			}
 		});
 
 		const footer = document.createElement('div');
-		footer.className = 'mt-4 flex justify-end gap-2';
+		footer.className = 'mt-6 flex justify-end gap-3 border-t border-gray-700 pt-3';
 		footer.innerHTML = `
-			<button class="px-4 py-2 text-gray-400 hover:text-gray-300" id="cancel">Cancel</button>
-			<button class="px-4 py-2 bg-teal-600 text-white rounded-lg" id="add">Add Columns</button>
+			<button class="px-4 py-2 text-gray-400 hover:text-gray-300 rounded" id="cancel">Cancel</button>
+			<button class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-500 transition-colors" id="add">Add Selected Columns</button>
 		`;
 
+		dialog.appendChild(header);
 		dialog.appendChild(content);
 		dialog.appendChild(footer);
 		document.body.appendChild(dialog);
@@ -673,6 +692,57 @@
 		notificationTimeout = setTimeout(() => {
 			notifications = notifications.slice(1);
 		}, 3000);
+	}
+
+	// Helper function to get the correct health value from unit data
+	function getUnitHealth(unitData, unitId) {
+		// Try all possible paths to find health
+		const paths = [
+			unitData?.maxdamage,
+			unitData?.health,
+			unitData?.[unitId]?.maxdamage,
+			unitData?.[unitId]?.health,
+			unitData?.data?.[unitId]?.[unitId]?.maxdamage,
+			unitData?.data?.[unitId]?.maxdamage
+		];
+		
+		// Return the first non-undefined value, or 0 if all are undefined
+		return paths.find(value => value !== undefined) || 0;
+	}
+
+	// Helper function to get unit metal cost value
+	function getUnitMetal(unitData, unitId) {
+		// Check multiple paths to find the metal cost
+		const paths = [
+			// Direct paths
+			unitData?.buildcostmetal,
+			unitData?.[unitId]?.buildcostmetal,
+			unitData?.data?.[unitId]?.[unitId]?.buildcostmetal,
+			unitData?.data?.[unitId]?.buildcostmetal,
+			$unitsData?.[unitId]?.data?.[unitId]?.buildcostmetal,
+			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.buildcostmetal,
+			
+			// Check cost object
+			unitData?.cost?.metal,
+			unitData?.[unitId]?.cost?.metal,
+			unitData?.data?.[unitId]?.cost?.metal,
+			unitData?.data?.[unitId]?.[unitId]?.cost?.metal,
+			$unitsData?.[unitId]?.data?.[unitId]?.cost?.metal,
+			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.cost?.metal,
+			
+			// Check metalcost property
+			unitData?.metalcost,
+			unitData?.[unitId]?.metalcost,
+			$unitsData?.[unitId]?.data?.[unitId]?.metalcost,
+			
+			// Check in customparams
+			unitData?.customparams?.buildcostmetal,
+			unitData?.[unitId]?.customparams?.buildcostmetal,
+			$unitsData?.[unitId]?.data?.[unitId]?.customparams?.buildcostmetal
+		];
+		
+		// Return the first non-undefined, non-null value, or 0 if all are undefined/null
+		return paths.find(value => value !== undefined && value !== null) || 0;
 	}
 </script>
 
@@ -1109,7 +1179,32 @@
 										</td>
 										{#each columns.filter((col) => col.visible && col.id !== 'unit') as column}
 											<td class="p-3 text-right text-gray-300">
+												{#if column.id === 'buildcostmetal'}
+													{@const metalPaths = [
+														$unitsData?.[unit.id]?.data?.[unit.id]?.buildcostmetal,
+														$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.buildcostmetal,
+														$unitsData?.[unit.id]?.buildcostmetal,
+														$unitsData?.[unit.id]?.data?.[unit.id]?.cost?.metal,
+														$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.cost?.metal,
+														$unitsData?.[unit.id]?.data?.[unit.id]?.metalcost,
+														$unitsData?.[unit.id]?.data?.[unit.id]?.customparams?.buildcostmetal,
+														unit.data?.buildcostmetal,
+														unit.data?.[unit.id]?.buildcostmetal
+													]}
+													{metalPaths.find(v => v !== undefined && v !== null) || getUnitMetal(unit.data, unit.id) || 0}
+												{:else if column.id === 'maxdamage' || column.id === 'health'}
+													{#if $unitsData?.[unit.id]?.data?.[unit.id]?.[column.id] !== undefined}
+														{$unitsData?.[unit.id]?.data?.[unit.id]?.[column.id]}
+													{:else if $unitsData?.[unit.id]?.data?.[unit.id]?.maxdamage !== undefined}
+														{$unitsData?.[unit.id]?.data?.[unit.id]?.maxdamage}
+													{:else if $unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.maxdamage !== undefined}
+														{$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.maxdamage}
+													{:else}
+														{0}
+													{/if}
+												{:else}
 												{formatValue(unit[column.id], column.id)}
+												{/if}
 								</td>
 										{/each}
 							</tr>
@@ -1340,19 +1435,25 @@
 																							{/if}</span
 																						>
 																					</div>
+																					{#if weapon.isEMP}
+																					<div class="flex justify-between">
+																						<span class="text-gray-400">{getDisplayName('paralyzemultiplier')}</span>
+																						<span class="font-medium text-yellow-400">x{weapon.paralyzeMultiplier}</span>
+																					</div>
+																					<div class="flex justify-between">
+																						<span class="text-gray-400">Paralyze DPS</span>
+																						<span class="font-medium text-yellow-400">{weapon.paralyzeDps}</span>
+																					</div>
+																					{/if}
 																					{#if weapon.burstCount > 1}
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Burst</span>
-																						<span class="font-medium text-green-400"
-																							>x{weapon.burstCount}</span
-																						>
+																						<span class="font-medium text-green-400">x{weapon.burstCount}</span>
 																					</div>
 																					{/if}
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Range</span>
-																						<span class="font-medium text-blue-400"
-																							>{weapon.range}</span
-																						>
+																						<span class="font-medium text-blue-400">{weapon.range}</span>
 																					</div>
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Reload</span>
@@ -1385,7 +1486,7 @@
 												<td
 													class="sticky left-0 z-10 p-4 pl-8 text-gray-400"
 													style="background: linear-gradient(to right, rgb(17 24 39 / 0.95), rgb(17 24 39 / 0.95)) padding-box, rgb(55 65 81 / 0.5) border-box; border-right: 2px solid transparent; backdrop-filter: blur(4px);"
-													>{prop}</td
+													>{getDisplayName(prop)}</td
 												>
 												{#each values as value, i}
 													<td
@@ -1393,57 +1494,120 @@
 															? 'font-medium'
 															: ''} {allSame ? 'text-gray-300' : 'text-white'}"
 													>
-														{#if typeof value === 'object' && value !== null}
-															<button
-																class="inline-flex items-center gap-2 rounded px-2 py-1 text-sm text-gray-400 hover:bg-gray-800/50"
-																on:click={() => toggleExpanded(prop)}
-																aria-label={expandedFields.has(prop)
-																	? 'Collapse details'
-																	: 'Expand details'}
-															>
-																<span>{Object.keys(value).length} items</span>
-																<svg
-																	class="h-4 w-4 transition-transform {expandedFields.has(prop)
-																		? 'rotate-180'
-																		: ''}"
-																	fill="none"
-																	stroke="currentColor"
-																	viewBox="0 0 24 24"
-																>
-																	<path
-																		stroke-linecap="round"
-																		stroke-linejoin="round"
-																		stroke-width="2"
-																		d="M19 9l-7 7-7-7"
-																	/>
-																</svg>
-															</button>
+														{#if value === undefined || value === null}
+															<span class="text-gray-500">—</span>
+														{:else if typeof value === 'object' && value !== null}
 															{#if expandedFields.has(prop)}
-																<div class="mt-2 space-y-1 text-left">
-																	{#each formatDeepObject(value) as { key, value }}
-																		<div
-																			class="flex items-center gap-2 px-2 py-1 hover:bg-gray-800/50"
-																		>
-																			<span class="text-sm text-gray-400">{key}:</span>
-																			{#if Array.isArray(value)}
-																				<div class="ml-4 space-y-1">
-																					{#each value as item}
-																						<div class="flex items-center gap-2">
-																							<span class="text-sm text-gray-400">{item.key}:</span>
-																							<span class="text-sm text-gray-200">{item.value}</span
-																							>
-																						</div>
-																					{/each}
+																{#if prop === 'buildoptions'}
+																	<div class="grid gap-2">
+																		{#each Object.entries(value) as [index, unitId]}
+																			{@const unitInfo = $unitsData?.[unitId] || {}}
+																			{@const unitData = unitInfo?.data?.[unitId] || {}}
+																			{@const unitTechLevel = unitInfo?.tech_level || 1}
+																			<a 
+																				href="{base}/unit?name={unitId}" 
+																				class="group flex items-start gap-3 rounded-lg bg-gray-800/90 p-3 transition-all hover:bg-gray-700/80 hover:shadow-md"
+																			>
+																				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-700/70 text-lg font-bold text-teal-300">
+																					{unitId.slice(0, 2).toUpperCase()}
 																				</div>
-																			{:else}
-																				<span class="text-sm text-gray-200">{value}</span>
-																			{/if}
-																		</div>
-																	{/each}
-																</div>
+																				<div class="flex flex-1 flex-col">
+																					<div class="flex items-center justify-between">
+																						<span class="text-sm font-medium text-white">
+																							{$unitNamesDetails?.units?.names?.[unitId] || unitId}
+																						</span>
+																						<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+																							T{unitTechLevel}
+																						</span>
+																					</div>
+																					<div class="mt-1 flex flex-wrap gap-1">
+																						<span class="rounded-full bg-teal-500/20 px-1.5 py-0.5 text-xs text-teal-400">
+																							{unitInfo?.faction === 'arm' ? 'ARM' : 'COR'}
+																						</span>
+																						{#if unitInfo?.type}
+																							<span class="rounded-full bg-purple-500/20 px-1.5 py-0.5 text-xs text-purple-400">
+																								{unitInfo.type}
+																						</span>
+																						{/if}
+																					</div>
+																					{#if unitData}
+																						<div class="mt-1.5 grid grid-cols-3 gap-1 text-xs">
+																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
+																								<span class="text-gray-400">HP:</span>
+																								<span class="font-medium text-red-400">
+																								{getUnitHealth(unitData, unitId)}
+																								</span>
+																							</div>
+																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
+																								<span class="text-gray-400">Metal:</span>
+																								<span class="font-medium text-blue-400">
+																								{getUnitMetal(unitData, unitId)}
+																								</span>
+																							</div>
+																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
+																								<span class="text-gray-400">Time:</span>
+																								<span class="font-medium text-green-400">
+																								{unitData[unitId]?.buildtime || unitData.buildtime
+																									? formatValueWithContext(
+																											unitData[unitId]?.buildtime || unitData.buildtime,
+																											'buildtime'
+																										)
+																									: '0s'}
+																								</span>
+																							</div>
+																						</div>
+																					{/if}
+																				</div>
+																			</a>
+																		{/each}
+																	</div>
+																{:else}
+																	<div class="flex flex-col gap-2">
+																		{#each formatDeepObject(value) as { key, value }}
+																			<div class="flex items-center gap-2 px-2 py-1 hover:bg-gray-800/50">
+																				<span class="text-sm text-gray-400">{getDisplayName(key)}:</span>
+																				{#if Array.isArray(value)}
+																					<div class="ml-4 space-y-1">
+																						{#each value as item}
+																							<div class="flex items-center gap-2">
+																								<span class="text-sm text-gray-400">{getDisplayName(item.key)}:</span>
+																								<span class="text-sm text-gray-200">{item.value}</span>
+																							</div>
+																						{/each}
+																					</div>
+																				{:else}
+																					<span class="text-sm text-gray-200">{value}</span>
+																				{/if}
+																			</div>
+																		{/each}
+																	</div>
+																{/if}
+																<button
+																	class="mt-2 text-xs text-teal-400 hover:text-teal-300"
+																	on:click={() => toggleExpanded(prop)}
+																>
+																	Collapse
+																</button>
+															{:else}
+																<button
+																	class="text-sm text-teal-400 hover:text-teal-300"
+																	on:click={() => toggleExpanded(prop)}
+																>
+																	{#if prop === 'buildoptions'}
+																		View Build Options ({Object.keys(value).length})
+																	{:else if prop === 'weapondefs'}
+																		View Weapon Definitions ({Object.keys(value).length})
+																	{:else if prop === 'weapons'}
+																		View Weapons ({Object.keys(value).length})
+																	{:else if prop === 'customparams'}
+																		View Custom Parameters ({Object.keys(value).length})
+																	{:else}
+																		View Details ({Object.keys(value).length})
+																	{/if}
+																</button>
 															{/if}
 														{:else}
-															{formatValue(value, prop)}
+															{formatValueWithContext(value, prop)}
 														{/if}
 													</td>
 												{/each}

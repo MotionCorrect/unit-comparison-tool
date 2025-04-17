@@ -169,9 +169,6 @@
             "name": "armgplat"
         },
         {
-            "name": "armptl"
-        },
-        {
             "name": "armtl"
         },
         {
@@ -185,9 +182,6 @@
         },
         {
             "name": "armuwgeo"
-        },
-        {
-            "name": "armuwmex"
         },
         {
             "name": "armuwms"
@@ -493,9 +487,6 @@
             "name": "corgplat"
         },
         {
-            "name": "corptl"
-        },
-        {
             "name": "cortl"
         },
         {
@@ -509,9 +500,6 @@
         },
         {
             "name": "coruwgeo"
-        },
-        {
-            "name": "coruwmex"
         },
         {
             "name": "coruwms"
@@ -671,6 +659,9 @@
         },
         {
             "name": "legkam"
+        },
+        {
+            "name": "leglts"
         },
         {
             "name": "legmos"
@@ -917,6 +908,15 @@
         },
         {
             "name": "legjam"
+        },
+        {
+            "name": "legmine1"
+        },
+        {
+            "name": "legmine2"
+        },
+        {
+            "name": "legmine3"
         },
         {
             "name": "legnanotc"
@@ -1532,6 +1532,9 @@
         },
         {
             "name": "corakt4"
+        },
+        {
+            "name": "corkark"
         },
         {
             "name": "leggobt3"
@@ -2289,6 +2292,12 @@
             "name": "legstarfall"
         },
         {
+            "name": "legadveconv"
+        },
+        {
+            "name": "legadvestore"
+        },
+        {
             "name": "legafus"
         },
         {
@@ -2322,6 +2331,21 @@
             "name": "legoptio"
         },
         {
+            "name": "legajam"
+        },
+        {
+            "name": "legarad"
+        },
+        {
+            "name": "legdeflector"
+        },
+        {
+            "name": "legsd"
+        },
+        {
+            "name": "legtarg"
+        },
+        {
             "name": "legaheattank"
         },
         {
@@ -2350,6 +2374,9 @@
         },
         {
             "name": "legmrv"
+        },
+        {
+            "name": "legvflak"
         },
         {
             "name": "armsat"
@@ -2480,22 +2507,31 @@
             "name": "corsok"
         },
         {
+            "name": "leggatet3"
+        },
+        {
             "name": "leggant"
         },
         {
             "name": "leegmech"
         },
         {
+            "name": "legeheatraymech"
+        },
+        {
+            "name": "legelrpcmech"
+        },
+        {
             "name": "legerailtank"
+        },
+        {
+            "name": "legeshotgunmech"
         },
         {
             "name": "legjav"
         },
         {
             "name": "legkeres"
-        },
-        {
-            "name": "legpede"
         },
         {
             "name": "armfepocht4"
@@ -2538,6 +2574,9 @@
         },
         {
             "name": "corthermite"
+        },
+        {
+            "name": "legpede"
         },
         {
             "name": "legsrailt4"

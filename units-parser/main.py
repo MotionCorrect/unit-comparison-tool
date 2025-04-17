@@ -11,14 +11,21 @@ from GitHubDownloader import Downloader
 import argparse
 from slpp import slpp
 import logging
+from typing import Dict, List, Set, Any, Optional, Union
+
+# =====================
+# CONFIG AND SETUP
+# =====================
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
-# Lua parser setup
-lua = LuaRuntime(unpack_returned_tuples=True)
-
-# URLs
+# URLs and Paths
 NAMES_DETAILS_URL = "https://raw.githubusercontent.com/beyond-all-reason/Beyond-All-Reason/master/language/en/units.json"
 BAR_REPO_URL = "https://github.com/beyond-all-reason/Beyond-All-Reason"
 UNITS_FOLDER_PATH = "units"
@@ -27,12 +34,7 @@ UNITS_FOLDER_PATH = "units"
 CACHE_DIR = Path("cache")
 UNITS_DIR = CACHE_DIR / "units"
 
-# Ensure cache directories exist
-CACHE_DIR.mkdir(exist_ok=True)
-UNITS_DIR.mkdir(exist_ok=True)
-logging.info(f"Cache directories created or already exist: {CACHE_DIR}, {UNITS_DIR}")
-
-# List of JSON files to clean up before each run
+# JSON files to maintain
 JSON_FILES = [
     "units_data.json",
     "unit_names_details.json",
@@ -41,43 +43,45 @@ JSON_FILES = [
     "units_by_tech.json",
     "units_by_faction_type_tech.json",
     "factions_list.json",
-    "types_with_subtypes.json"
+    "types_with_subtypes.json",
+    "all_keywords.json",
+    "all_keywords.txt"
 ]
 
-# Clean up old JSON files
+# =====================
+# UTILITY FUNCTIONS
+# =====================
+
+def ensure_directories_exist() -> None:
+    """Ensure all required directories exist."""
+    CACHE_DIR.mkdir(exist_ok=True)
+    UNITS_DIR.mkdir(exist_ok=True)
+    logger.info(f"Cache directories created or verified: {CACHE_DIR}, {UNITS_DIR}")
+
+def clean_json_files() -> None:
+    """Clean up old JSON files to ensure fresh data."""
 for json_file in JSON_FILES:
     file_path = CACHE_DIR / json_file
     if file_path.exists():
-        logging.info(f"Removing old file: {file_path}")
+            logger.info(f"Removing old file: {file_path}")
         file_path.unlink()
 
-# Function to download a file
-def download_file(url, save_path):
+def download_file(url: str, save_path: Path) -> None:
     """Downloads a file from a URL to a specified path."""
-    logging.info(f"Downloading: {url} to {save_path}")
+    logger.info(f"Downloading: {url} to {save_path}")
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response.raise_for_status()
         with open(save_path, "wb") as f:
             f.write(response.content)
-        logging.info(f"Successfully downloaded: {url}")
+        logger.info(f"Successfully downloaded: {url}")
     except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to download {url}: {e}")
+        logger.error(f"Failed to download {url}: {e}")
         raise
 
-
-# Command-line argument parsing
-parser = argparse.ArgumentParser(
-    description="Download and parse Beyond All Reason unit files."
-)
-parser.add_argument(
-    "--update-files", action="store_true", help="Force update and redownload all files."
-)
-args = parser.parse_args()
-
-# Handle --update-files argument
-if args.update_files:
-    logging.info("Update files flag is set. Cleaning cache directory.")
+def clean_cache_directory() -> None:
+    """Completely clean the cache directory for a fresh download."""
+    logger.info("Cleaning cache directory for update...")
     for filename in os.listdir(CACHE_DIR):
         file_path = os.path.join(CACHE_DIR, filename)
         try:
@@ -85,90 +89,41 @@ if args.update_files:
                 os.unlink(file_path)
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
-            logging.debug(f"Removed: {file_path}")
+            logger.debug(f"Removed: {file_path}")
         except Exception as e:
-            logging.error(f"Failed to delete {file_path}. Reason: {e}")
-    names_details_path = CACHE_DIR / "units.json"
-    if names_details_path.exists():
-        logging.info(f"Removing old file: {names_details_path}")
-        names_details_path.unlink()
+            logger.error(f"Failed to delete {file_path}. Reason: {e}")
 
-# Download units.json
-names_details_path = CACHE_DIR / "units.json"
-if args.update_files or not names_details_path.exists():
-    download_file(NAMES_DETAILS_URL, names_details_path)
-else:
-    logging.info(f"Using cached file: {names_details_path}")
-
-# Download the units folder
-if args.update_files or len(os.listdir(UNITS_DIR)) == 0:
-    logging.info(f"Downloading units folder from {BAR_REPO_URL}")
-    downloader = Downloader(BAR_REPO_URL, "master")
-    downloader.download(CACHE_DIR, UNITS_FOLDER_PATH, True)
-    logging.info(f"Units folder downloaded to: {UNITS_DIR}")
-else:
-    logging.info(f"Using cached folder: {UNITS_DIR}")
-
-
-def preprocess_lua_content(content):
+def preprocess_lua_content(content: str) -> str:
     """
     Remove everything before the first 'return' and the 'return' keyword itself.
     """
-    # Split the content at the first occurrence of 'return'
     parts = content.split("return", 1)
-
-    # If 'return' exists, return the content after it; otherwise, return the original content
     return parts[1].strip() if len(parts) > 1 else content.strip()
 
-
-def parse_lua_file(file_path):
+def parse_lua_file(file_path: Path) -> Optional[Dict]:
     """
     Parse a Lua file into a Python dictionary using slpp.
     Handles preprocessing to account for typical syntax issues.
     """
-    logging.debug(f"Parsing Lua file: {file_path}")
+    logger.debug(f"Parsing Lua file: {file_path}")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             lua_content = f.read()
 
-        # Preprocess the Lua content
         lua_content = preprocess_lua_content(lua_content)
-        # Parse the Lua content
         parsed_data = slpp.decode(lua_content)
-        logging.debug(f"Successfully parsed: {file_path}")
+        logger.debug(f"Successfully parsed: {file_path}")
         return parsed_data
     except Exception as e:
-        logging.error(f"Failed to parse {file_path}: {e}")
+        logger.error(f"Failed to parse {file_path}: {e}")
         return None
-
-
-# Collect all units data
-units_data = {}  # Will store unit data by name
-unit_names_details = {}
-
-# Initialize categorized dictionaries
-units_by_faction = {}
-units_by_type = {}
-units_by_tech = {}
-units_by_faction_type_tech = {}
-
-# Load names and details JSON
-with open(names_details_path, "r") as f:
-    unit_names_details = json.load(f)
-logging.info(f"Loaded unit names and details from: {names_details_path}")
-
-# Add new dictionaries to store the lists
-factions_list = set()
-types_with_subtypes = {}
 
 def is_tier_folder(folder_name: str) -> bool:
     """Check if a folder name represents a tier (T1, T2, etc)"""
     return folder_name.lower().startswith('t') and folder_name[1:].isdigit()
 
-
 def format_subtype(subtype: str) -> str:
-    """Format a subtype string into a readable format"""
-    # Split camelCase into words
+    """Format a subtype string into a readable format (camelCase to words)"""
     words = []
     current_word = ""
     for char in subtype:
@@ -182,52 +137,65 @@ def format_subtype(subtype: str) -> str:
     
     return " ".join(words)
 
+# =====================
+# DATA PARSING FUNCTIONS
+# =====================
 
-# Recursive function to parse Lua files and build tree
-def parse_units_folder(folder, path: list[str] = []):
-    """Recursively parses the units folder to extract unit data."""
+def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
+    """
+    Recursively parses the units folder to extract unit data.
+    Returns a dictionary with all unit data.
+    """
+    global units_data, units_by_faction, units_by_type, units_by_tech, units_by_faction_type_tech
+    global factions_list, types_with_subtypes
+    
     for item in folder.iterdir():
         item: Path = item
         if item.is_dir():
-            logging.debug(f"Entering directory: {item.stem}, current path: {path + [item.stem]}")
+            logger.debug(f"Entering directory: {item.stem}, current path: {path + [item.stem]}")
             parse_units_folder(item, path + [item.stem])
         elif item.suffix == ".lua":
             unit_data = parse_lua_file(item)
             if unit_data:
+                # Default values
                 faction = "other"
                 unit_type = "other"
                 unit_subtype = "none"
                 tech_level = 1
 
+                # Determine faction and type from folder structure
                 if len(path) > 0:
                     if path[0].startswith("Arm"):
                         faction = "arm"
                         unit_type = path[0][3:].lower()
-                        # Check for subtype in subfolder
                         if len(path) > 1 and not is_tier_folder(path[1]):
                             unit_subtype = format_subtype(path[1])
                     elif path[0].startswith("Cor"):
                         faction = "cor"
                         unit_type = path[0][3:].lower()
-                        # Check for subtype in subfolder
                         if len(path) > 1 and not is_tier_folder(path[1]):
                             unit_subtype = format_subtype(path[1])
-                    # elif path[0] == "Legion":
-                    #     faction = "leg"
-                    #     type = path[1].lower()
 
+                # Extract tech level if available
                 if (
-                    type(unit_data) is dict
+                    isinstance(unit_data, dict)
                     and item.stem in unit_data
+                    and "customparams" in unit_data[item.stem]
                     and "techlevel" in unit_data[item.stem]["customparams"]
                 ):
                     tech_level = unit_data[item.stem]["customparams"]["techlevel"]
 
+                # Log unit info
                 if faction != "other":
-                    logging.info(
-                        f"[{str(item.stem).center(20)}]   [{str(faction).center(10)}]   [{str(unit_type).center(10)}]   [{str(unit_subtype).center(15)}]   [T{str(tech_level).center(10)}]"
+                    logger.info(
+                        f"Unit: {item.stem.ljust(20)} | "
+                        f"Faction: {faction.ljust(10)} | "
+                        f"Type: {unit_type.ljust(10)} | "
+                        f"Subtype: {unit_subtype.ljust(15)} | "
+                        f"Tech: T{str(tech_level)}"
                     )
 
+                # Create unit info object
                 unit_info = {
                     "name": item.stem,
                     "faction": faction,
@@ -238,17 +206,13 @@ def parse_units_folder(folder, path: list[str] = []):
                     "data": unit_data,
                 }
 
-                # Store complete unit data in units_data dictionary
+                # Store in main data dictionary
                 units_data[item.stem] = unit_info
 
                 # Create a reference object without the full data
-                unit_ref = {
-                    "name": item.stem,
-                    # "faction": faction,
-                    # "type": unit_type,
-                    # "subtype": unit_subtype,
-                    # "tech_level": tech_level
-                }
+                unit_ref = {"name": item.stem}
+
+                # Update collection structures
 
                 # Add to factions list
                 if faction != "other":
@@ -266,7 +230,7 @@ def parse_units_folder(folder, path: list[str] = []):
                     units_by_faction[faction] = []
                 units_by_faction[faction].append(unit_ref)
 
-                # Modify how units are added to units_by_type
+                # Add to type dictionary with subtypes
                 if unit_type not in units_by_type:
                     units_by_type[unit_type] = {}
                     if unit_subtype == "none":
@@ -295,74 +259,19 @@ def parse_units_folder(folder, path: list[str] = []):
                     units_by_faction_type_tech[faction][unit_type][unit_subtype][tech_level] = []
                 units_by_faction_type_tech[faction][unit_type][unit_subtype][tech_level].append(unit_ref)
 
+    return units_data
 
-# Parse the units folder
-logging.info(f"Starting parsing of units folder: {UNITS_DIR}")
-parse_units_folder(UNITS_DIR)
-logging.info("Finished parsing units folder.")
-
-# Convert sets to lists for JSON serialization
-factions_list = sorted(list(factions_list))
-types_with_subtypes = {
-    type_name: sorted(list(subtypes))
-    for type_name, subtypes in types_with_subtypes.items()
-}
-
-# Add new paths for the additional JSON files
-factions_list_path = CACHE_DIR / "factions_list.json"
-types_with_subtypes_path = CACHE_DIR / "types_with_subtypes.json"
-
-# Save the new JSON files
-with open(factions_list_path, "w") as f:
-    json.dump(factions_list, f, indent=4)
-logging.info(f"Factions list saved to: {factions_list_path}")
-
-with open(types_with_subtypes_path, "w") as f:
-    json.dump(types_with_subtypes, f, indent=4)
-logging.info(f"Types with subtypes saved to: {types_with_subtypes_path}")
-
-# Save results
-units_data_path = CACHE_DIR / "units_data.json"
-unit_names_path = CACHE_DIR / "unit_names_details.json"
-units_by_faction_path = CACHE_DIR / "units_by_faction.json"
-units_by_type_path = CACHE_DIR / "units_by_type.json"
-units_by_tech_path = CACHE_DIR / "units_by_tech.json"
-units_by_faction_type_tech_path = CACHE_DIR / "units_by_faction_type_tech.json"
-
-with open(units_data_path, "w") as f:
-    json.dump(units_data, f, indent=4)
-logging.info(f"Units data saved to: {units_data_path}")
-
-with open(unit_names_path, "w") as f:
-    json.dump(unit_names_details, f, indent=4)
-logging.info(f"Unit names and details saved to: {unit_names_path}")
-
-with open(units_by_faction_path, "w") as f:
-    json.dump(units_by_faction, f, indent=4)
-logging.info(f"Units by faction saved to: {units_by_faction_path}")
-
-with open(units_by_type_path, "w") as f:
-    json.dump(units_by_type, f, indent=4)
-logging.info(f"Units by type saved to: {units_by_type_path}")
-
-with open(units_by_tech_path, "w") as f:
-    json.dump(units_by_tech, f, indent=4)
-logging.info(f"Units by tech level saved to: {units_by_tech_path}")
-
-with open(units_by_faction_type_tech_path, "w") as f:
-    json.dump(units_by_faction_type_tech, f, indent=4)
-logging.info(f"Units by faction/type/tech saved to: {units_by_faction_type_tech_path}")
-
-logging.info("All data processing and saving complete.")
-
-def analyze_unit_data_structure(units_data):
-    """Analyze the structure of units data and list all possible fields."""
+def analyze_unit_data_structure(units_data: Dict) -> Dict[str, List[str]]:
+    """
+    Analyze the structure of units data and list all possible fields.
+    Returns a dictionary with categorized fields.
+    """
     structure = {
-        'root_level': set(),  # Fields at the root level of each unit
-        'data_level': set(),  # Fields inside the data[unit_name] object
+        'root_level': set(),    # Fields at the root level of each unit
+        'data_level': set(),    # Fields inside the data[unit_name] object
         'customparams': set(),  # Fields inside customparams
-        'sfxtypes': set(),     # Fields inside sfxtypes
-        'sounds': set(),       # Fields inside sounds
+        'sfxtypes': set(),      # Fields inside sfxtypes
+        'sounds': set(),        # Fields inside sounds
     }
     
     for unit_name, unit in units_data.items():
@@ -389,10 +298,312 @@ def analyze_unit_data_structure(units_data):
     # Convert sets to sorted lists for better readability
     return {k: sorted(str(x) for x in v) for k, v in structure.items()}
 
-# Add this after parsing all units
-structure = analyze_unit_data_structure(units_data)
-print("\nUnit Data Structure:")
+def extract_all_keywords(units_data: Dict) -> List[str]:
+    """
+    Extract all unique keywords from the JSON data that could be stats, 
+    combat attributes, or resources for LLM formatting.
+    """
+    all_keywords = set()
+    
+    # Process each unit
+    for unit_name, unit in units_data.items():
+        # Skip non-dict items if any
+        if not isinstance(unit, dict) or 'data' not in unit:
+            continue
+            
+        # Extract unit data
+        if unit_name in unit['data']:
+            unit_data = unit['data'][unit_name]
+            
+            # Add all top-level keys
+            all_keywords.update(str(key) for key in unit_data.keys())
+            
+            # Add all customparams keys
+            if 'customparams' in unit_data and isinstance(unit_data['customparams'], dict):
+                all_keywords.update(str(key) for key in unit_data['customparams'].keys())
+            
+            # Add weapon keys
+            if 'weapons' in unit_data and isinstance(unit_data['weapons'], dict):
+                for weapon_key, weapon_data in unit_data['weapons'].items():
+                    if isinstance(weapon_data, dict):
+                        all_keywords.update(str(key) for key in weapon_data.keys())
+            
+            # Add weapondefs keys if available
+            if 'weapondefs' in unit_data and isinstance(unit_data['weapondefs'], dict):
+                for weapon_key, weapon_data in unit_data['weapondefs'].items():
+                    if isinstance(weapon_data, dict):
+                        all_keywords.update(str(key) for key in weapon_data.keys())
+            
+            # Check for any additional nested dictionaries that might contain stats
+            for key, value in unit_data.items():
+                if isinstance(value, dict):
+                    all_keywords.update(str(k) for k in value.keys())
+    
+    # Add some common calculated terms that might not appear directly in the data
+    calculated_terms = {
+        'dps', 'damage_per_cost', 'range_min', 'range_max', 'reload_time',
+        'fire_rate', 'burst_length', 'salvo_size', 'shield_power',
+        'shield_radius', 'shield_rate', 'shield_recharge', 'armor_class',
+        'armor_type', 'damage_type', 'weapon_type', 'impulse_factor',
+        'collide_friendly'
+    }
+    all_keywords.update(calculated_terms)
+    
+    # Convert any non-string values to strings and sort
+    sorted_keywords = sorted(str(keyword) for keyword in all_keywords)
+    
+    return sorted_keywords
+
+def generate_llm_prompt(keywords: List[str]) -> Path:
+    """
+    Generate a prompt for an LLM to create a mapping from raw keywords to human-readable display names.
+    Returns the path to the generated prompt file.
+    """
+    prompt = [
+        "# Unit Statistics Keywords Formatting Task",
+        "",
+        "I need you to create a mapping from the raw property names used in our game data to human-readable display names for our website interface.",
+        "",
+        "## Instructions:",
+        "1. For each keyword in the list below, provide:",
+        "   - The original property name as the key",
+        "   - A human-readable, well-formatted display name as the value",
+        "",
+        "2. Format guidelines:",
+        "   - Convert snake_case and camelCase to Title Case",
+        "   - Use proper spacing (e.g., 'seismicsignature' → 'Seismic Signature')",
+        "   - Use proper capitalization for acronyms (e.g., 'dps' → 'DPS')",
+        "   - Ensure consistency in terminology",
+        "",
+        "3. Output format:",
+        "Return a JavaScript object (not a TypeScript enum) where each key is the original property name and each value is the display name.",
+        "",
+        "## Example:",
+        "```javascript",
+        "export const propertyToDisplayName = {",
+        "  \"maxdamage\": \"Max Health\",",
+        "  \"firerate\": \"Fire Rate\",",
+        "  \"dps\": \"DPS\",",
+        "  \"seismicsignature\": \"Seismic Signature\",",
+        "  \"buildcostenergy\": \"Energy Cost\",",
+        "  \"buildcostmetal\": \"Metal Cost\"",
+        "};",
+        "```",
+        "",
+        "## Keywords to format:",
+        ""
+    ]
+    
+    # Add all keywords to the prompt
+    for keyword in sorted(keywords):
+        prompt.append(f"- {keyword}")
+    
+    prompt.extend([
+        "",
+        "Please provide the complete JavaScript object with all keywords mapped to their display names.",
+        "This will be used directly in our website to show user-friendly labels for all unit statistics."
+    ])
+    
+    # Write to file with UTF-8 encoding
+    prompt_path = CACHE_DIR / "llm_prompt.txt"
+    with open(prompt_path, "w", encoding="utf-8") as f:
+        f.write('\n'.join(prompt))
+    logger.info(f"LLM prompt saved to: {prompt_path}")
+    
+    return prompt_path
+
+def save_keywords_to_files(keywords: List[str]) -> None:
+    """Save keywords to both JSON and txt formats for different uses."""
+    # Save to JSON file
+    keywords_path = CACHE_DIR / "all_keywords.json"
+    with open(keywords_path, "w", encoding="utf-8") as f:
+        json.dump(keywords, f, indent=4)
+    logger.info(f"All unique keywords saved to: {keywords_path}")
+    
+    # Also save as plain text for easier copying to LLM
+    keywords_txt_path = CACHE_DIR / "all_keywords.txt"
+    with open(keywords_txt_path, "w", encoding="utf-8") as f:
+        for keyword in keywords:
+            f.write(f"{keyword}\n")
+    logger.info(f"All unique keywords (plain text) saved to: {keywords_txt_path}")
+
+def save_results_to_json_files() -> None:
+    """Save all the collected data to their respective JSON files."""
+    # Convert sets to lists for JSON serialization
+    global factions_list, types_with_subtypes
+    factions_list_sorted = sorted(list(factions_list))
+    types_with_subtypes_sorted = {
+        type_name: sorted(list(subtypes))
+        for type_name, subtypes in types_with_subtypes.items()
+    }
+
+    # Define paths
+    units_data_path = CACHE_DIR / "units_data.json"
+    unit_names_path = CACHE_DIR / "unit_names_details.json"
+    units_by_faction_path = CACHE_DIR / "units_by_faction.json"
+    units_by_type_path = CACHE_DIR / "units_by_type.json"
+    units_by_tech_path = CACHE_DIR / "units_by_tech.json"
+    units_by_faction_type_tech_path = CACHE_DIR / "units_by_faction_type_tech.json"
+    factions_list_path = CACHE_DIR / "factions_list.json"
+    types_with_subtypes_path = CACHE_DIR / "types_with_subtypes.json"
+
+    # Save all files
+    file_data_pairs = [
+        (units_data_path, units_data, "Units data"),
+        (unit_names_path, unit_names_details, "Unit names and details"),
+        (units_by_faction_path, units_by_faction, "Units by faction"),
+        (units_by_type_path, units_by_type, "Units by type"),
+        (units_by_tech_path, units_by_tech, "Units by tech level"),
+        (units_by_faction_type_tech_path, units_by_faction_type_tech, "Units by faction/type/tech"),
+        (factions_list_path, factions_list_sorted, "Factions list"),
+        (types_with_subtypes_path, types_with_subtypes_sorted, "Types with subtypes")
+    ]
+
+    for path, data, description in file_data_pairs:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"{description} saved to: {path}")
+
+def print_structure_summary(structure):
+    """Print a nicely formatted summary of the data structure."""
+    print("\n" + "="*60)
+    print(" UNIT DATA STRUCTURE SUMMARY ")
+    print("="*60)
+    
 for section, fields in structure.items():
     print(f"\n{section.upper()}:")
+        print("-" * 40)
+        
+        # Print in multiple columns if there are many fields
+        if len(fields) > 20:
+            # Calculate columns and rows
+            col_width = 25
+            num_cols = 3
+            fields_per_col = (len(fields) + num_cols - 1) // num_cols
+            
+            for i in range(0, fields_per_col):
+                row = []
+                for col in range(num_cols):
+                    idx = i + col * fields_per_col
+                    if idx < len(fields):
+                        row.append(fields[idx].ljust(col_width))
+                    else:
+                        row.append("".ljust(col_width))
+                print("  " + "".join(row))
+        else:
+            # Single column for fewer fields
     for field in fields:
         print(f"  - {field}")
+
+# =====================
+# MAIN EXECUTION FLOW
+# =====================
+
+def main():
+    global units_data, unit_names_details, units_by_faction, units_by_type
+    global units_by_tech, units_by_faction_type_tech, factions_list, types_with_subtypes
+    
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Download and parse Beyond All Reason unit files."
+    )
+    parser.add_argument(
+        "--update-files", action="store_true", help="Force update and redownload all files."
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Enable verbose logging."
+    )
+    args = parser.parse_args()
+
+    # Set logging level based on verbosity flag
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Verbose logging enabled")
+
+    print("\n" + "="*60)
+    print(" BEYOND ALL REASON UNIT DATA PARSER ")
+    print("="*60)
+    
+    # Initialize empty data structures
+    units_data = {}
+    unit_names_details = {}
+    units_by_faction = {}
+    units_by_type = {}
+    units_by_tech = {}
+    units_by_faction_type_tech = {}
+    factions_list = set()
+    types_with_subtypes = {}
+
+    # Step 1: Ensure directories exist and clean files if needed
+    ensure_directories_exist()
+    
+    if args.update_files:
+        clean_cache_directory()
+    else:
+        clean_json_files()
+
+    # Step 2: Download unit names/details JSON
+    names_details_path = CACHE_DIR / "units.json"
+    if args.update_files or not names_details_path.exists():
+        download_file(NAMES_DETAILS_URL, names_details_path)
+    else:
+        logger.info(f"Using cached file: {names_details_path}")
+
+    # Step 3: Download the units folder
+    if args.update_files or len(os.listdir(UNITS_DIR)) == 0:
+        logger.info(f"Downloading units folder from {BAR_REPO_URL}")
+        downloader = Downloader(BAR_REPO_URL, "master")
+        downloader.download(CACHE_DIR, UNITS_FOLDER_PATH, True)
+        logger.info(f"Units folder downloaded to: {UNITS_DIR}")
+    else:
+        logger.info(f"Using cached folder: {UNITS_DIR}")
+
+    # Step 4: Load names and details JSON
+    with open(names_details_path, "r", encoding="utf-8") as f:
+        unit_names_details = json.load(f)
+    logger.info(f"Loaded unit names and details from: {names_details_path}")
+
+    # Step 5: Parse units folder
+    print("\n" + "="*60)
+    print(" PARSING UNIT DATA ")
+    print("="*60)
+    logger.info(f"Starting parsing of units folder: {UNITS_DIR}")
+    parse_units_folder(UNITS_DIR)
+    logger.info(f"Finished parsing units folder. Found {len(units_data)} units.")
+
+    # Step 6: Save all results to JSON files
+    print("\n" + "="*60)
+    print(" SAVING RESULTS ")
+    print("="*60)
+    save_results_to_json_files()
+    
+    # Step 7: Analyze the structure of units data
+    structure = analyze_unit_data_structure(units_data)
+    print_structure_summary(structure)
+
+    # Step 8: Extract all keywords
+    print("\n" + "="*60)
+    print(" EXTRACTING KEYWORDS FOR LLM FORMATTING ")
+    print("="*60)
+    logger.info("Extracting all unique keywords for display name mapping...")
+    all_keywords = extract_all_keywords(units_data)
+    logger.info(f"Found {len(all_keywords)} unique keywords")
+    
+    # Step 9: Save keywords to files
+    save_keywords_to_files(all_keywords)
+    
+    # Step 10: Generate LLM prompt
+    prompt_path = generate_llm_prompt(all_keywords)
+    
+    print("\n" + "="*60)
+    print(" COMPLETE ")
+    print("="*60)
+    print(f"LLM prompt saved to: {prompt_path}")
+    print("Next steps:")
+    print("1. Submit the contents of the LLM prompt file to ChatGPT or similar LLM")
+    print("2. Have the LLM convert raw property names to user-friendly display names")
+    print("3. Add the resulting JavaScript object to your website's code")
+    print("="*60 + "\n")
+
+if __name__ == "__main__":
+    main()

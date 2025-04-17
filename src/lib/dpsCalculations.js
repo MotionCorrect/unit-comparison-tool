@@ -50,6 +50,9 @@ export function processWeapons(weapondefs) {
         // Check if weapon is an EMP/paralyzer
         const isEMP = weapon.paralyzer === 'Yes' || weapon.paralyzer === true;
         
+        // Extract paralyze multiplier (important for EMP weapons)
+        const paralyzeMultiplier = Number(weapon.paralyzemultiplier) || 1;
+        
         // Check if weapon is a notFlame type (should be excluded from DPS)
         const isNotFlame = weapon.weapontype === 'notFlame';
 
@@ -58,6 +61,9 @@ export function processWeapons(weapondefs) {
 
         // Calculate DPS, but set to 0 for EMP weapons and notFlame weapons
         const dps = isEMP || isNotFlame ? 0 : (maxDamage * burstCount) / (weapon.reloadtime || 1);
+        
+        // For EMP weapons, calculate paralyze DPS (using paralyzemultiplier)
+        const paralyzeDps = isEMP ? (maxDamage * burstCount * paralyzeMultiplier) / (weapon.reloadtime || 1) : 0;
 
         return {
             name: weapon.name || key,
@@ -65,6 +71,8 @@ export function processWeapons(weapondefs) {
             damage: maxDamage,
             maxDamage,
             dps: typeof dps === 'number' ? dps.toFixed(1) : dps,
+            paralyzeDps: typeof paralyzeDps === 'number' ? paralyzeDps.toFixed(1) : 0,
+            paralyzeMultiplier,
             range: Number(weapon.range || 0),
             reloadTime: Number(weapon.reloadtime || 1),
             isEMP,
@@ -79,7 +87,7 @@ export function processWeapons(weapondefs) {
  * @param {Array} weapons - Array of processed weapons
  * @param {Object} unitData - The unit data object
  * @param {string} unitId - The unit ID
- * @returns {Object|null} - Object with totalDps and maxRange, or null if no weapons
+ * @returns {Object|null} - Object with totalDps, totalParalyzeDps and maxRange, or null if no weapons
  */
 export function getUnitCombatStats(weapons, unitData, unitId) {
     if (!weapons?.length) return null;
@@ -93,13 +101,18 @@ export function getUnitCombatStats(weapons, unitData, unitId) {
         
         return {
             totalDps: suicideDPS.toFixed(1),
+            totalParalyzeDps: "0.0",
             maxRange: Math.max(...weapons.map((w) => Number(w.range)))
         };
     }
     
+    // Calculate total paralyze DPS from weapons
+    const totalParalyzeDps = weapons.reduce((sum, w) => sum + Number(w.paralyzeDps || 0), 0);
+    
     // Normal DPS calculation for non-suicide units
     return {
         totalDps: weapons.reduce((sum, w) => sum + Number(w.dps), 0).toFixed(1),
+        totalParalyzeDps: totalParalyzeDps.toFixed(1),
         maxRange: Math.max(...weapons.map((w) => Number(w.range)))
     };
 }
