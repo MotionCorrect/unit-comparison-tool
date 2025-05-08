@@ -50,6 +50,7 @@ aa_gun
 aa_minigun
 aa_missile
 aa_missiles
+aa_railgun
 aakflak
 aamissile
 aaweapon
@@ -238,6 +239,7 @@ canfight
 canfly
 canguard
 canhover
+canhvylaserroar
 canland
 canloopbackattack
 canmanualfire
@@ -489,6 +491,7 @@ footprintx
 footprintz
 frontgun
 ga2
+gatling_gun
 gator_laser
 gator_laserx
 gauss
@@ -542,10 +545,12 @@ isairbase
 iscommander
 isdecoycommander
 istargetingupgrade
+iswatervariable
 janus_rocket
 juggernaut_bottom
 juggernaut_fire
 juggernaut_top
+juggfootstep
 juno_pulse
 juno_pulse_ghost
 juno_pulse_mini
@@ -571,6 +576,7 @@ leadbonus
 leadlimit
 leavetracks
 leg_amph_gauss
+leg_bot_rocket
 legacyname
 legah_gun
 legair_torp
@@ -581,6 +587,7 @@ legfloat_gauss
 leggun
 legheatray
 legicbm
+legion_riot_cannon_t2
 legion_shotgun
 legkeres_cannon
 legkeres_gatling
@@ -689,6 +696,7 @@ paralyzetime
 paratrooper
 parentsinheritxp
 pieceexplosiongenerators
+piledriver
 plasma
 plasma_high
 predictBoost
@@ -737,6 +745,8 @@ rockstrength
 rockteeth
 rockteethx
 salvo_size
+scav_swap_override_captured
+scav_swap_override_created
 script
 scrollspeed
 sdmssl
@@ -820,12 +830,14 @@ stockpile
 stockpiletime
 strafetoattack
 subfolder
+sumohvylaserroar
 super_missile
 t2heatray
 t3_rail_accelerator
 targetBorder
 targetable
 targetborder
+targeting
 targetmoveerror
 tawf113_weapon
 td_depthcharge
@@ -841,9 +853,11 @@ thunder
 tidalgenerator
 tilelength
 tmaw
+tolerace
 tolerance
 topgunaa
 torpedo
+torplauncher
 trackoffset
 tracks
 trackstrength
@@ -893,6 +907,7 @@ water_fall_damage_multiplier
 waterballon
 waterbounce
 waterline
+waterspeed
 waterweapon
 weapon
 weapon1turretx

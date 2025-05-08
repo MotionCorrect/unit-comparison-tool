@@ -36,18 +36,6 @@ export function formatValue(value) {
 }
 
 /**
- * Format a time value in seconds
- * @param {number} seconds - Time in seconds
- * @returns {string} - Formatted time
- */
-export function formatTime(seconds) {
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
-}
-
-/**
  * Format a value with context based on property name
  * @param {any} value - The value to format
  * @param {string} key - The property name
@@ -56,15 +44,26 @@ export function formatTime(seconds) {
 export function formatValueWithContext(value, key) {
   // Special handling for build time which needs to be divided by 100
   if (key === 'buildtime' && typeof value === 'number') {
-    return formatTime(value / 100);
+    const seconds = value / 100;
+    return `${seconds.toFixed(2)}s`; // Format to 2 decimal places + 's'
   }
   // General time formatting for other time fields
   if (key.toLowerCase().includes('time') && typeof value === 'number') {
-    return formatTime(value);
+    return `${value.toFixed(2)}s`; // Format to 2 decimal places + 's'
   }
-  // Special handling for DPS values to ensure they have one decimal place
-  if (key === 'dps' && typeof value === 'number') {
-    return value.toFixed(1);
+  // Special handling for DPS, Range, and other specific numeric values
+  if ((key === 'dps' || key === 'maxRange' || key === 'range' || key === 'sightDistance' || key === 'sightdistance') && typeof value === 'number') {
+    // If it's a whole number, display without decimal. Otherwise, one decimal for dps/range, potentially more for others if needed by toLocaleString default.
+    if (key === 'dps' || key === 'maxRange' || key === 'range') { // Keys that strictly prefer .0 or .X
+        return value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
+    }
+    // For sightDistance, allow toLocaleString to handle it, which usually doesn't add .0 for whole numbers.
+    // If specific formatting (e.g. always 0 decimals) is needed for sightDistance, it can be added here.
+    return value.toLocaleString(); 
   }
-  return formatValue(value);
+  // Ensure other numbers like health, armor, buildcostmetal also use toLocaleString for consistency if they are numbers
+  if (typeof value === 'number') {
+    return value.toLocaleString();
+  }
+  return formatValue(value); // Fallback to general formatValue which also handles numbers with toLocaleString, but this explicit check above is clearer.
 } 

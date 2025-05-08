@@ -5,7 +5,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		//"set MANUAL_BUILD=true && pnpm run build" on windows to build the site
+		//"set MANUAL_BUILD=true && pnpm run build" on windows to build the website
 		paths: {
 			base: process.env.MANUAL_BUILD === 'true' ? '/unit-comparison-tool' : ''
 		},

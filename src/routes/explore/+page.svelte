@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import * as d3 from 'd3';
-	import { loadData, unitNamesDetails, unitsByFactionTypeTech } from '$lib/data';
+	import { loadData, unitNamesDetails, unitsByFactionTypeTech, unitsData } from '$lib/data';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { base } from '$app/paths';
 
@@ -123,6 +123,31 @@
 		return baseDistance + (sourceConnections + targetConnections) * connectionFactor;
 	}
 
+	// Function to get image path (Apply working logic)
+	function getUnitImagePath(unitDbName) {
+		if (!unitDbName || !$unitsData || !$unitsData[unitDbName]) return '';
+		const unitFullData = $unitsData[unitDbName];
+		const unitSpecificData = unitFullData?.data?.[unitDbName];
+		if (!unitSpecificData || !unitSpecificData.buildpic) return '';
+
+		const buildpic = unitSpecificData.buildpic;
+		const parts = buildpic.split('/');
+		// Remove strict checks as per unit page logic
+		const filenameWithExt = parts.pop();
+		const category = parts.pop(); 
+		const filename = filenameWithExt.split('.')[0].toLowerCase(); // Add lowercase
+		
+		if(category){ // Use fallback logic
+			return `${base}/unitpics_webp/${category}/${filename}.webp`;
+		} else {
+			// Fallback if category is somehow missing (e.g., path like 'lups/unitpics/someunit.dds')
+			// Or handle cases where buildpic might just be 'filename.dds' - needs confirmation of data structure
+			console.warn(`Buildpic for ${unitDbName} might be missing category: ${buildpic}. Using fallback path.`);
+			return `${base}/unitpics_webp/${filename}.webp`;
+		}
+	}
+
+	// Modify generateTooltipContent
 	function generateTooltipContent(d) {
 		const borderColor =
 			d.group === 'unit'
@@ -246,8 +271,14 @@
 				</div>`;
 		} else if (d.group === 'unit') {
 			const path = d.id.split('-');
+			const imagePath = getUnitImagePath(d.dbName);
+			const imageHtml = imagePath 
+				? `<div class="mb-4 flex justify-center"><img src="${imagePath}" alt="${d.name}" class="max-w-[150px] max-h-[150px] object-contain rounded border border-gray-700"></div>` 
+				: ''; // Empty string if no image
+
 			content = `
 				<div class="p-4 bg-gray-900/95 rounded-lg shadow-xl">
+					${imageHtml}
 					<div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-700">
 						<a href="${base}/unit?name=${d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${d.name}</a>
 						<span class="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full uppercase tracking-wide">${d.group}</span>
@@ -492,13 +523,14 @@
 				currentHoveredNodeId = d.id;
 				clearTimeout(tooltipHideTimeout);
 
-				// Slow down simulation when hovering
 				simulation.alpha(0.1).alphaTarget(0).velocityDecay(0.7);
 
 				const tooltip = d3.select('body').select('.tooltip');
-				tooltip.html(generateTooltipContent(d));
 
-				// Get tooltip dimensions after content is set
+				// Set the HTML content using the modified generateTooltipContent
+				tooltip.html(generateTooltipContent(d));
+				
+				// Position D3 tooltip (remains the same)
 				const tooltipNode = tooltip.node();
 				const tooltipRect = tooltipNode.getBoundingClientRect();
 				const { x, y } = calculateTooltipPosition(event, tooltipRect.width, tooltipRect.height);
@@ -510,38 +542,30 @@
 					.transition()
 					.duration(200);
 
-				// Just unfix the node position
 				d.fx = d.x;
 				d.fy = d.y;
 			})
 			.on('mousemove', (event, d) => {
+				// Update D3 tooltip position (remains the same)
 				const tooltip = d3.select('body').select('.tooltip');
 				const tooltipNode = tooltip.node();
-				const tooltipRect = tooltipNode.getBoundingClientRect();
-				const { x, y } = calculateTooltipPosition(event, tooltipRect.width, tooltipRect.height);
-
-				tooltip.style('left', `${x}px`).style('top', `${y}px`).style('opacity', 1);
+				if (tooltipNode) {
+					const tooltipRect = tooltipNode.getBoundingClientRect();
+					const { x, y } = calculateTooltipPosition(event, tooltipRect.width, tooltipRect.height);
+					tooltip.style('left', `${x}px`).style('top', `${y}px`).style('opacity', 1);
+				}
 			})
 			.on('mouseout', (event, d) => {
 				currentHoveredNodeId = null;
 
-				// Restore normal simulation speed
 				simulation.alpha(0.4).alphaTarget(0.4).velocityDecay(0.5).restart();
-
-				// const tooltip = d3.select('body').select('.tooltip');
-				// tooltip.html('');
-				// tooltip
-				// 	.transition()
-				// 	.duration(200)
-				// 	.style('opacity', 0);
-				// Just unfix the node position
 				d.fx = null;
 				d.fy = null;
 
-				// Only start hide timer if mouse isn't over tooltip
+				// Start timer to hide D3 tooltip (remains the same)
 				const tooltip = d3.select('body').select('.tooltip');
 				if (!tooltip.node()?.matches(':hover')) {
-					handleTooltipHide();
+					handleTooltipHide(); 
 				}
 			});
 

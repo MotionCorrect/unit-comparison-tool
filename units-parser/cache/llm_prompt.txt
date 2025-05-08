@@ -82,6 +82,7 @@ export const propertyToDisplayName = {
 - aa_minigun
 - aa_missile
 - aa_missiles
+- aa_railgun
 - aakflak
 - aamissile
 - aaweapon
@@ -270,6 +271,7 @@ export const propertyToDisplayName = {
 - canfly
 - canguard
 - canhover
+- canhvylaserroar
 - canland
 - canloopbackattack
 - canmanualfire
@@ -521,6 +523,7 @@ export const propertyToDisplayName = {
 - footprintz
 - frontgun
 - ga2
+- gatling_gun
 - gator_laser
 - gator_laserx
 - gauss
@@ -574,10 +577,12 @@ export const propertyToDisplayName = {
 - iscommander
 - isdecoycommander
 - istargetingupgrade
+- iswatervariable
 - janus_rocket
 - juggernaut_bottom
 - juggernaut_fire
 - juggernaut_top
+- juggfootstep
 - juno_pulse
 - juno_pulse_ghost
 - juno_pulse_mini
@@ -603,6 +608,7 @@ export const propertyToDisplayName = {
 - leadlimit
 - leavetracks
 - leg_amph_gauss
+- leg_bot_rocket
 - legacyname
 - legah_gun
 - legair_torp
@@ -613,6 +619,7 @@ export const propertyToDisplayName = {
 - leggun
 - legheatray
 - legicbm
+- legion_riot_cannon_t2
 - legion_shotgun
 - legkeres_cannon
 - legkeres_gatling
@@ -721,6 +728,7 @@ export const propertyToDisplayName = {
 - paratrooper
 - parentsinheritxp
 - pieceexplosiongenerators
+- piledriver
 - plasma
 - plasma_high
 - predictBoost
@@ -769,6 +777,8 @@ export const propertyToDisplayName = {
 - rockteeth
 - rockteethx
 - salvo_size
+- scav_swap_override_captured
+- scav_swap_override_created
 - script
 - scrollspeed
 - sdmssl
@@ -852,12 +862,14 @@ export const propertyToDisplayName = {
 - stockpiletime
 - strafetoattack
 - subfolder
+- sumohvylaserroar
 - super_missile
 - t2heatray
 - t3_rail_accelerator
 - targetBorder
 - targetable
 - targetborder
+- targeting
 - targetmoveerror
 - tawf113_weapon
 - td_depthcharge
@@ -873,9 +885,11 @@ export const propertyToDisplayName = {
 - tidalgenerator
 - tilelength
 - tmaw
+- tolerace
 - tolerance
 - topgunaa
 - torpedo
+- torplauncher
 - trackoffset
 - tracks
 - trackstrength
@@ -925,6 +939,7 @@ export const propertyToDisplayName = {
 - waterballon
 - waterbounce
 - waterline
+- waterspeed
 - waterweapon
 - weapon
 - weapon1turretx

@@ -865,13 +865,28 @@
             "name": "legtide"
         },
         {
+            "name": "legctl"
+        },
+        {
             "name": "legfhive"
         },
         {
-            "name": "legptl"
+            "name": "legfmg"
+        },
+        {
+            "name": "legfrl"
+        },
+        {
+            "name": "legptl_deprecated"
         },
         {
             "name": "legtl"
+        },
+        {
+            "name": "legtl_deprecated"
+        },
+        {
+            "name": "legfrad"
         },
         {
             "name": "leghastatus"
@@ -998,6 +1013,9 @@
         },
         {
             "name": "dice"
+        },
+        {
+            "name": "dummycom"
         },
         {
             "name": "armcomlvl10"
@@ -2229,6 +2247,9 @@
             "name": "legwhisper"
         },
         {
+            "name": "legamph"
+        },
+        {
             "name": "legbart"
         },
         {
@@ -2263,6 +2284,9 @@
         },
         {
             "name": "legacv"
+        },
+        {
+            "name": "legafcv"
         },
         {
             "name": "legabm"
@@ -2314,6 +2338,15 @@
         },
         {
             "name": "legmohobp"
+        },
+        {
+            "name": "legmohocon"
+        },
+        {
+            "name": "legmohoconct"
+        },
+        {
+            "name": "legmohoconin"
         },
         {
             "name": "legrampart"
@@ -2516,6 +2549,9 @@
             "name": "leegmech"
         },
         {
+            "name": "legbunk"
+        },
+        {
             "name": "legeheatraymech"
         },
         {
@@ -2586,6 +2622,24 @@
         },
         {
             "name": "cordoomt3"
+        },
+        {
+            "name": "armafust3"
+        },
+        {
+            "name": "armmmkrt3"
+        },
+        {
+            "name": "corafust3"
+        },
+        {
+            "name": "cormmkrt3"
+        },
+        {
+            "name": "legadveconvt3"
+        },
+        {
+            "name": "legafust3"
         },
         {
             "name": "armapt3"

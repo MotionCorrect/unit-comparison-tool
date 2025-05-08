@@ -3,6 +3,8 @@
 	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
 	import { slide } from 'svelte/transition';
 	import Navbar from '$lib/components/Navbar.svelte';
+	import ImageTooltip from '$lib/components/ImageTooltip.svelte';
+	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte';
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
 	import {
@@ -27,6 +29,72 @@
 	let groupedData = {};
 	let weaponsData = [];
 	let loading = false;
+
+	// Tooltip state
+	let showTooltip = false;
+	let tooltipImageUrl = '';
+	let tooltipX = 0;
+	let tooltipY = 0;
+
+	// Use reactive variable for static image path again
+	$: staticImagePath = getUnitImagePath(unitData);
+
+	// Function to get image path (Restored original logic)
+	function getUnitImagePath(currentUnitData) {
+		if (!currentUnitData || !currentUnitData.buildpic) return '';
+		const buildpic = currentUnitData.buildpic;
+		const parts = buildpic.split('/');
+		const filenameWithExt = parts.pop();
+		const category = parts.pop();
+		const filename = filenameWithExt.split('.')[0].toLowerCase();
+		if (category) {
+			return `${base}/unitpics_webp/${category}/${filename}.webp`;
+		}
+		return `${base}/unitpics_webp/${filename}.webp`;
+	}
+
+	// Helper function to get the correct health value from unit data
+	function getUnitHealth(uData, uId) {
+		// Try all possible paths to find health
+		const paths = [
+			uData?.maxdamage,
+			uData?.health,
+			uData?.[uId]?.maxdamage,
+			uData?.[uId]?.health,
+			// Check one level deeper for nested structures if the primary unit's data is passed directly
+			uData?.data?.[uId]?.maxdamage,
+			uData?.data?.[uId]?.health,
+			// Check against global $unitsData as a fallback for buildable units
+			$unitsData?.[uId]?.data?.[uId]?.maxdamage,
+			$unitsData?.[uId]?.data?.[uId]?.health
+		];
+		return paths.find((value) => value !== undefined) || 0;
+	}
+
+	// Helper function to get unit metal cost value
+	function getUnitMetal(uData, uId) {
+		const paths = [
+			uData?.buildcostmetal,
+			uData?.[uId]?.buildcostmetal,
+			uData?.cost?.metal,
+			uData?.[uId]?.cost?.metal,
+			uData?.metalcost,
+			uData?.[uId]?.metalcost,
+			uData?.customparams?.buildcostmetal,
+			uData?.[uId]?.customparams?.buildcostmetal,
+			// Check one level deeper
+			uData?.data?.[uId]?.buildcostmetal,
+			uData?.data?.[uId]?.cost?.metal,
+			uData?.data?.[uId]?.metalcost,
+			uData?.data?.[uId]?.customparams?.buildcostmetal,
+			// Check against global $unitsData
+			$unitsData?.[uId]?.data?.[uId]?.buildcostmetal,
+			$unitsData?.[uId]?.data?.[uId]?.cost?.metal,
+			$unitsData?.[uId]?.data?.[uId]?.metalcost,
+			$unitsData?.[uId]?.data?.[uId]?.customparams?.buildcostmetal
+		];
+		return paths.find((value) => value !== undefined && value !== null) || 0;
+	}
 
 	// Move the data loading to a separate function for reuse
 	async function loadUnitData(unitName) {
@@ -259,40 +327,6 @@
 		return spaceBelow < 400 ? 'top' : 'bottom';
 	}
 
-	// Add a helper function to get the correct health value
-	function getUnitHealth(unitData, unitName) {
-		// Try all possible paths to find health
-		const paths = [
-			unitData?.maxdamage,
-			unitData?.health,
-			unitData?.[unitName]?.maxdamage,
-			unitData?.[unitName]?.health,
-			unit?.data?.[unitName]?.[unitName]?.maxdamage,
-			unit?.data?.[unitName]?.maxdamage
-		];
-
-		// Return the first non-undefined value, or 0 if all are undefined
-		return paths.find((value) => value !== undefined) || 0;
-	}
-
-	// Add a helper function to get unit metal cost value
-	function getUnitMetal(unitData, unitName) {
-		// Try all possible paths to find metal cost
-		const paths = [
-			unitData?.buildcostmetal,
-			unitData?.[unitName]?.buildcostmetal,
-			unit?.data?.[unitName]?.[unitName]?.buildcostmetal,
-			unit?.data?.[unitName]?.buildcostmetal,
-			// Access the unitInfo directly from unitsData
-			$unitsData?.[unitName]?.data?.[unitName]?.buildcostmetal,
-			// Check if it's nested another level
-			$unitsData?.[unitName]?.data?.[unitName]?.[unitName]?.buildcostmetal
-		];
-
-		// Return the first non-undefined value, or 0 if all are undefined
-		return paths.find((value) => value !== undefined && value !== null) || 0;
-	}
-
 	// Add a debugging function to check specific unit data structure
 	function logUnitData(unitId) {
 		if (import.meta.env.DEV) {
@@ -362,47 +396,70 @@
 
 <div class="min-h-screen bg-gray-900 text-gray-100">
 	<Navbar />
+	<ImageTooltip imageUrl={tooltipImageUrl} visible={showTooltip} x={tooltipX} y={tooltipY} />
 	<div class="container mx-auto max-w-7xl px-4 py-8">
 		{#if unit && unitData}
 			<div class="space-y-8">
 				<header class="mb-8">
-					<div class="mb-4 flex items-center justify-between">
-						<h1
-							class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-4xl font-bold text-transparent"
-						>
-							{displayName}
-						</h1>
+					<div class="mb-6 flex items-center gap-6">
+						{#if staticImagePath}
+							<div
+								class="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-700/50 bg-gray-800/50"
+							>
+								<img
+									src={staticImagePath}
+									alt="{displayName} image"
+									class="max-h-full max-w-full object-contain"
+									loading="lazy"
+								/>
+							</div>
+						{/if}
+						<div>
+							<div class="mb-4 flex items-center justify-between">
+								<h1
+									class="cursor-default bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-4xl font-bold text-transparent"
+								>
+									{displayName}
+								</h1>
+							</div>
+							<div class="flex flex-wrap gap-3">
+								<span
+									class="rounded-full bg-teal-500/20 px-3 py-1 text-sm font-medium text-teal-400"
+								>
+									{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
+								</span>
+								<span
+									class="rounded-full bg-orange-500/20 px-3 py-1 text-sm font-medium text-orange-400"
+								>
+									{unit.type}
+								</span>
+								{#if unit.subtype !== 'none'}
+									<span
+										class="rounded-full bg-pink-500/20 px-3 py-1 text-sm font-medium text-pink-400"
+									>
+										{unit.subtype}
+									</span>
+								{/if}
+								<span
+									class="rounded-full bg-purple-500/20 px-3 py-1 text-sm font-medium text-purple-400"
+								>
+									Tech {unit.tech_level}
+								</span>
+								{#if isSuicideUnit(unitData)}
+									<span
+										class="rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-400"
+									>
+										{isMineUnit(unitData) ? 'Mine' : 'Suicide Unit'}
+									</span>
+								{/if}
+							</div>
+						</div>
 						<a
 							href="{base}/explore"
-							class="rounded-lg bg-gray-800/50 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700/50"
+							class="ml-auto self-start rounded-lg bg-gray-800/50 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700/50"
 						>
 							Back to Explorer
 						</a>
-					</div>
-					<div class="flex flex-wrap gap-3">
-						<span class="rounded-full bg-teal-500/20 px-3 py-1 text-sm font-medium text-teal-400">
-							{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
-						</span>
-						<span
-							class="rounded-full bg-orange-500/20 px-3 py-1 text-sm font-medium text-orange-400"
-						>
-							{unit.type}
-						</span>
-						{#if unit.subtype !== 'none'}
-							<span class="rounded-full bg-pink-500/20 px-3 py-1 text-sm font-medium text-pink-400">
-								{unit.subtype}
-							</span>
-						{/if}
-						<span
-							class="rounded-full bg-purple-500/20 px-3 py-1 text-sm font-medium text-purple-400"
-						>
-							Tech {unit.tech_level}
-						</span>
-						{#if isSuicideUnit(unitData)}
-							<span class="rounded-full bg-red-500/20 px-3 py-1 text-sm font-medium text-red-400">
-								{isMineUnit(unitData) ? 'Mine' : 'Suicide Unit'}
-							</span>
-						{/if}
 					</div>
 				</header>
 
@@ -485,234 +542,68 @@
 												class="rounded-lg border border-gray-700/50 bg-gray-900/95 p-4 shadow-xl"
 											>
 												<div class="max-h-80 overflow-y-auto">
-													{#if key === 'buildoptions' && Object.values(value).length > 0}
-														<div class="max-h-96 overflow-y-auto rounded-lg bg-gray-800/70 p-2">
-															<div
-																class="mb-3 flex items-center justify-between border-b border-gray-700/50 pb-2"
-															>
-																<h3 class="font-medium text-white">
-																	Buildable Units ({Object.values(value).length})
-																</h3>
-																<span
-																	class="rounded-full bg-teal-500/20 px-2 py-0.5 text-xs text-teal-400"
-																>
-																	{unit.faction === 'arm' ? 'Armada' : 'Cortex'} Constructor
-																</span>
-															</div>
-															<div class="grid gap-2 sm:grid-cols-1">
-																{#each Object.values(value) as option}
-																	{@const unitInfo = $unitsData?.[option] || {}}
-																	{@const unitTechLevel = unitInfo?.tech_level || 1}
-																	<a
-																		href="{base}/unit?name={option}"
-																		class="group relative flex items-start gap-3 rounded-lg bg-gray-800/90 p-3 transition-all hover:bg-gray-700/80 hover:shadow-md"
-																	>
-																		<div
-																			class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gray-700/70 text-lg font-bold text-teal-300"
-																		>
-																			{option.slice(0, 2).toUpperCase()}
+													{#if key === 'buildoptions'}
+														{#if typeof value === 'object' && value !== null && Object.keys(value).length > 0}
+															<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+																{#each Object.entries(value) as [boIndex, buildableUnitId]}
+																	{@const buildableUnitInfo = $unitsData?.[buildableUnitId] || {}}
+																	{@const buildableUnitData = buildableUnitInfo?.data?.[buildableUnitId] || {}}
+																	{@const buildableUnitName = $unitNamesDetails?.units?.names?.[buildableUnitId] || buildableUnitId}
+																	{@const buildableUnitTech = buildableUnitInfo?.tech_level || 1}
+																	{@const buildableUnitFaction = buildableUnitInfo?.faction}
+																	{@const buildableUnitType = buildableUnitInfo?.type}
+
+																	<a href="{base}/unit?name={buildableUnitId}" class="block rounded-lg bg-gray-800/70 p-3 transition-all hover:bg-gray-700/70 hover:shadow-md">
+																		<div class="flex items-center justify-between">
+																			<span class="font-semibold text-teal-400">{buildableUnitName}</span>
+																			<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+																				T{buildableUnitTech}
+																			</span>
 																		</div>
-																		<div class="flex flex-1 flex-col">
-																			<div class="flex items-center justify-between">
-																				<span class="text-base font-medium text-white">
-																					{$unitNamesDetails?.units?.names?.[option] || option}
+																		<div class="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+																			{#if buildableUnitFaction}
+																				<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300">
+																					{buildableUnitFaction === 'arm' ? 'ARM' : 'COR'}
 																				</span>
-																				<div
-																					class="absolute right-3 top-3 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-																				>
-																					<span
-																						class="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400"
-																					>
-																						T{unitTechLevel}
-																					</span>
-																				</div>
-																			</div>
-																			<div class="mt-1 flex flex-wrap gap-1.5">
-																				<span
-																					class="rounded-full bg-teal-500/20 px-2 py-0.5 text-xs text-teal-400"
-																				>
-																					{unitInfo?.faction === 'arm' ? 'Armada' : 'Cortex'}
+																			{/if}
+																			{#if buildableUnitType && buildableUnitType !== 'other'}
+																				<span class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-300">
+																					{buildableUnitType}
 																				</span>
-																				{#if unitInfo?.type}
-																					<span
-																						class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
-																					>
-																						{unitInfo.type}
-																					</span>
-																				{/if}
-																				{#if unitInfo?.subtype && unitInfo.subtype !== 'none'}
-																					<span
-																						class="rounded-full bg-pink-500/20 px-2 py-0.5 text-xs text-pink-400"
-																					>
-																						{unitInfo.subtype}
-																					</span>
-																				{/if}
-																			</div>
-																			{#if unitInfo?.data?.[option]}
-																				{@const unitData = unitInfo.data[option]}
-																				{@const metalPaths = [
-																					unitData?.buildcostmetal,
-																					unitData?.[option]?.buildcostmetal,
-																					$unitsData?.[option]?.data?.[option]?.buildcostmetal,
-																					$unitsData?.[option]?.data?.[option]?.[option]
-																						?.buildcostmetal,
-																					unitData?.cost?.metal,
-																					unitData?.[option]?.cost?.metal,
-																					$unitsData?.[option]?.data?.[option]?.cost?.metal,
-																					$unitsData?.[option]?.data?.[option]?.[option]?.cost
-																						?.metal,
-																					unitData?.metalcost,
-																					unitData?.[option]?.metalcost,
-																					unitData?.customparams?.buildcostmetal
-																				]}
-																				{@const metalCost =
-																					metalPaths.find((v) => v !== undefined && v !== null) ||
-																					0}
-																				<div class="mt-2 grid grid-cols-3 gap-2 text-xs">
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Health:</span>
-																						<span class="font-medium text-red-400">
-																							{getUnitHealth(unitData, option)}
-																						</span>
-																					</div>
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Metal:</span>
-																						<span class="font-medium text-blue-400">
-																							{metalCost}
-																						</span>
-																					</div>
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Build:</span>
-																						<span class="font-medium text-green-400">
-																							{unitData[option]?.buildtime ||
-																							unitData.buildtime ||
-																							$unitsData?.[option]?.data?.[option]?.buildtime
-																								? formatValueWithContext(
-																										unitData[option]?.buildtime ||
-																										unitData.buildtime ||
-																										$unitsData?.[option]?.data?.[option]?.buildtime,
-																										'buildtime'
-																									)
-																								: '0s'}
-																						</span>
-																					</div>
-																				</div>
-																			{:else}
-																				<!-- If unit data is not directly accessible, use the direct lookup function -->
-																				{@const metalPaths = [
-																					$unitsData?.[option]?.data?.[option]?.buildcostmetal,
-																					$unitsData?.[option]?.data?.[option]?.[option]
-																						?.buildcostmetal,
-																					$unitsData?.[option]?.buildcostmetal,
-																					$unitsData?.[option]?.data?.[option]?.cost?.metal,
-																					$unitsData?.[option]?.data?.[option]?.[option]?.cost
-																						?.metal,
-																					$unitsData?.[option]?.data?.[option]?.metalcost,
-																					$unitsData?.[option]?.data?.[option]?.customparams
-																						?.buildcostmetal
-																				]}
-																				{@const metalCost =
-																					metalPaths.find((v) => v !== undefined && v !== null) ||
-																					0}
-																				<div class="mt-2 grid grid-cols-3 gap-2 text-xs">
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Health:</span>
-																						<span class="font-medium text-red-400">
-																							{getUnitHealth({}, option)}
-																						</span>
-																					</div>
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Metal:</span>
-																						<span class="font-medium text-blue-400">
-																							{metalCost}
-																						</span>
-																					</div>
-																					<div
-																						class="flex justify-between rounded bg-gray-700/30 px-2 py-1"
-																					>
-																						<span class="text-gray-400">Build:</span>
-																						<span class="font-medium text-green-400">
-																							{$unitsData?.[option]?.data?.[option]?.buildtime
-																								? formatValueWithContext(
-																										$unitsData?.[option]?.data?.[option]?.buildtime,
-																										'buildtime'
-																									)
-																								: '0s'}
-																						</span>
-																					</div>
-																				</div>
 																			{/if}
 																		</div>
+																		{#if buildableUnitData && Object.keys(buildableUnitData).length > 0}
+																			<div class="mt-2 grid grid-cols-3 gap-2 border-t border-gray-700/50 pt-2 text-xs">
+																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																					<span class="text-gray-400">HP</span>
+																					<span class="font-medium text-red-400">
+																						{formatValueWithContext(getUnitHealth(buildableUnitData, buildableUnitId), 'maxdamage')}
+																					</span>
+																				</div>
+																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																					<span class="text-gray-400">Metal</span>
+																					<span class="font-medium text-blue-400">
+																						{formatValueWithContext(getUnitMetal(buildableUnitData, buildableUnitId), 'buildcostmetal')}
+																					</span>
+																				</div>
+																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																					<span class="text-gray-400">Time</span>
+																					<span class="font-medium text-green-400">
+																						{formatValueWithContext(buildableUnitData.buildtime, 'buildtime')}
+																					</span>
+																				</div>
+																			</div>
+																		{/if}
 																	</a>
 																{/each}
 															</div>
+														{:else}
+															<span class="text-gray-500">—</span> /* No build options or empty object */
+														{/if}
+													{:else} 
+														<div class="mt-2 space-y-1 overflow-y-auto rounded-md bg-gray-850/50 p-2" style="max-height: 250px;">
+															<RecursiveObjectDisplay data={value} />
 														</div>
-													{:else if key === 'buildoptions'}
-														<div
-															class="flex items-center justify-center rounded-lg bg-gray-800/50 p-4"
-														>
-															<span class="text-sm text-gray-400">No build options available</span>
-														</div>
-													{:else}
-														{#each Object.entries(value) as [subKey, subValue]}
-															<div class="py-1">
-																{#if typeof subValue === 'object' && subValue !== null}
-																	<div
-																		class="flex items-center gap-2 rounded px-2 text-sm text-gray-400 hover:bg-gray-800/50"
-																	>
-																		<span>{getDisplayName(subKey)}:</span>
-																		<div class="ml-4 space-y-1">
-																			{#if subKey === 'damage'}
-																				{#each Object.entries(subValue) as [damageType, damageValue]}
-																					<div class="flex items-center gap-2">
-																						<span class="text-gray-500"
-																							>{damageType === 'default'
-																								? 'Base'
-																								: getDisplayName(damageType)}:</span
-																						>
-																						<span class="text-gray-200">{damageValue}</span>
-																					</div>
-																				{/each}
-																			{:else}
-																				{#each Object.entries(subValue) as [deepKey, deepValue]}
-																					<div class="flex items-center gap-2">
-																						<span class="text-gray-500"
-																							>{getDisplayName(deepKey)}:</span
-																						>
-																						<span class="text-gray-200">
-																							{typeof deepValue === 'object' && deepValue !== null
-																								? JSON.stringify(deepValue, null, 2)
-																								: formatValueWithContext(deepValue, deepKey)}
-																						</span>
-																					</div>
-																				{/each}
-																			{/if}
-																		</div>
-																	</div>
-																{:else}
-																	<div
-																		class="flex items-center gap-2 rounded px-2 hover:bg-gray-800/50"
-																	>
-																		<span class="text-sm text-gray-400"
-																			>{getDisplayName(subKey)}:</span
-																		>
-																		<span class="text-sm text-gray-200"
-																			>{formatValueWithContext(subValue, subKey)}</span
-																		>
-																	</div>
-																{/if}
-															</div>
-														{/each}
 													{/if}
 												</div>
 											</div>

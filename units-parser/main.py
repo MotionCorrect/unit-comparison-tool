@@ -12,6 +12,8 @@ import argparse
 from slpp import slpp
 import logging
 from typing import Dict, List, Set, Any, Optional, Union
+from PIL import Image, UnidentifiedImageError  # Added for image conversion
+from tqdm import tqdm  # Added for progress bar
 
 # =====================
 # CONFIG AND SETUP
@@ -20,8 +22,8 @@ from typing import Dict, List, Set, Any, Optional, Union
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -29,13 +31,17 @@ logger = logging.getLogger(__name__)
 NAMES_DETAILS_URL = "https://raw.githubusercontent.com/beyond-all-reason/Beyond-All-Reason/master/language/en/units.json"
 BAR_REPO_URL = "https://github.com/beyond-all-reason/Beyond-All-Reason"
 UNITS_FOLDER_PATH = "units"
+UNITPICS_FOLDER_PATH = "unitpics"  # Added for unit pictures
 
 # Directories
 CACHE_DIR = Path("cache")
 UNITS_DIR = CACHE_DIR / "units"
+UNITPICS_DIR = CACHE_DIR / UNITPICS_FOLDER_PATH  # Added for unit pictures
+UNITPICS_WEBP_DIR = CACHE_DIR / "unitpics_webp"  # Added for converted WebP images
+STATIC_DIR = Path("..\\static")  # Added static directory for website assets
 
-# JSON files to maintain
-JSON_FILES = [
+# JSON files to maintain in cache initially
+JSON_FILES_TO_CACHE = [
     "units_data.json",
     "unit_names_details.json",
     "units_by_faction.json",
@@ -45,26 +51,48 @@ JSON_FILES = [
     "factions_list.json",
     "types_with_subtypes.json",
     "all_keywords.json",
-    "all_keywords.txt"
+    "all_keywords.txt",
 ]
+
+# Files and folders to move to static directory
+FILES_TO_MOVE_TO_STATIC = [
+    "types_with_subtypes.json",
+    "unit_names_details.json",
+    "units_by_faction_type_tech.json",
+    "units_by_faction.json",
+    "units_by_tech.json",
+    "units_by_type.json",
+    "units_data.json",
+    "factions_list.json",
+]
+FOLDER_TO_MOVE_TO_STATIC = UNITPICS_WEBP_DIR.name  # Just the folder name
 
 # =====================
 # UTILITY FUNCTIONS
 # =====================
 
+
 def ensure_directories_exist() -> None:
     """Ensure all required directories exist."""
     CACHE_DIR.mkdir(exist_ok=True)
     UNITS_DIR.mkdir(exist_ok=True)
-    logger.info(f"Cache directories created or verified: {CACHE_DIR}, {UNITS_DIR}")
+    UNITPICS_DIR.mkdir(exist_ok=True)  # Ensure unitpics directory exists
+    UNITPICS_WEBP_DIR.mkdir(exist_ok=True)  # Ensure unitpics_webp directory exists
+    STATIC_DIR.mkdir(exist_ok=True)  # Ensure static directory exists
+    logger.info(
+        f"Cache directories created or verified: {CACHE_DIR}, {UNITS_DIR}, {UNITPICS_DIR}, {UNITPICS_WEBP_DIR}"
+    )
+    logger.info(f"Static directory for website created or verified: {STATIC_DIR}")
+
 
 def clean_json_files() -> None:
-    """Clean up old JSON files to ensure fresh data."""
-for json_file in JSON_FILES:
-    file_path = CACHE_DIR / json_file
-    if file_path.exists():
-            logger.info(f"Removing old file: {file_path}")
-        file_path.unlink()
+    """Clean up old JSON files from cache to ensure fresh data."""
+    for json_file in JSON_FILES_TO_CACHE:
+        file_path = CACHE_DIR / json_file
+        if file_path.exists():
+            logger.info(f"Removing old cached file: {file_path}")
+            file_path.unlink()
+
 
 def download_file(url: str, save_path: Path) -> None:
     """Downloads a file from a URL to a specified path."""
@@ -78,6 +106,7 @@ def download_file(url: str, save_path: Path) -> None:
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to download {url}: {e}")
         raise
+
 
 def clean_cache_directory() -> None:
     """Completely clean the cache directory for a fresh download."""
@@ -93,12 +122,14 @@ def clean_cache_directory() -> None:
         except Exception as e:
             logger.error(f"Failed to delete {file_path}. Reason: {e}")
 
+
 def preprocess_lua_content(content: str) -> str:
     """
     Remove everything before the first 'return' and the 'return' keyword itself.
     """
     parts = content.split("return", 1)
     return parts[1].strip() if len(parts) > 1 else content.strip()
+
 
 def parse_lua_file(file_path: Path) -> Optional[Dict]:
     """
@@ -118,9 +149,11 @@ def parse_lua_file(file_path: Path) -> Optional[Dict]:
         logger.error(f"Failed to parse {file_path}: {e}")
         return None
 
+
 def is_tier_folder(folder_name: str) -> bool:
     """Check if a folder name represents a tier (T1, T2, etc)"""
-    return folder_name.lower().startswith('t') and folder_name[1:].isdigit()
+    return folder_name.lower().startswith("t") and folder_name[1:].isdigit()
+
 
 def format_subtype(subtype: str) -> str:
     """Format a subtype string into a readable format (camelCase to words)"""
@@ -134,12 +167,72 @@ def format_subtype(subtype: str) -> str:
             current_word += char
     if current_word:
         words.append(current_word)
-    
+
     return " ".join(words)
+
+
+# =====================
+# IMAGE CONVERSION FUNCTION
+# =====================
+
+
+def convert_dds_to_webp(source_dir: Path, target_dir: Path) -> None:
+    """
+    Converts all DDS images in source_dir (and its subdirectories) to WebP format
+    and saves them in target_dir, maintaining the folder structure.
+    """
+    logger.info(f"Scanning for DDS files in {source_dir}...")
+    dds_file_paths = list(source_dir.rglob("*.dds"))
+
+    if not dds_file_paths:
+        logger.info(f"No DDS files found in {source_dir}.")
+        return
+
+    logger.info(
+        f"Found {len(dds_file_paths)} DDS files. Starting conversion to WebP in {target_dir}."
+    )
+    dds_files_converted = 0
+    dds_files_failed = 0
+
+    for dds_file_path in tqdm(
+        dds_file_paths, desc="Converting DDS to WebP", unit="file"
+    ):
+        try:
+            # Create corresponding subdirectory structure in target_dir
+            relative_path = dds_file_path.relative_to(source_dir)
+            webp_file_dir = target_dir / relative_path.parent
+            webp_file_dir.mkdir(parents=True, exist_ok=True)
+
+            # Define WebP filename
+            webp_file_name = relative_path.stem + ".webp"
+            webp_file_path = webp_file_dir / webp_file_name
+
+            # Open DDS and save as WebP
+            with Image.open(dds_file_path) as img:
+                # Ensure image is in RGBA format before saving to WebP to handle transparency
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                img.save(webp_file_path, "WEBP", quality=80)  # quality can be adjusted
+            logger.debug(f"Successfully converted: {dds_file_path} -> {webp_file_path}")
+            dds_files_converted += 1
+        except UnidentifiedImageError:
+            logger.error(
+                f"Failed to identify (or unsupported DDS format) {dds_file_path}. Skipping."
+            )
+            dds_files_failed += 1
+        except Exception as e:
+            logger.error(f"Failed to convert {dds_file_path}: {e}")
+            dds_files_failed += 1
+
+    logger.info(
+        f"DDS to WebP conversion complete. Converted: {dds_files_converted}, Failed: {dds_files_failed}"
+    )
+
 
 # =====================
 # DATA PARSING FUNCTIONS
 # =====================
+
 
 def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
     """
@@ -148,11 +241,13 @@ def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
     """
     global units_data, units_by_faction, units_by_type, units_by_tech, units_by_faction_type_tech
     global factions_list, types_with_subtypes
-    
+
     for item in folder.iterdir():
         item: Path = item
         if item.is_dir():
-            logger.debug(f"Entering directory: {item.stem}, current path: {path + [item.stem]}")
+            logger.debug(
+                f"Entering directory: {item.stem}, current path: {path + [item.stem]}"
+            )
             parse_units_folder(item, path + [item.stem])
         elif item.suffix == ".lua":
             unit_data = parse_lua_file(item)
@@ -235,7 +330,7 @@ def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
                     units_by_type[unit_type] = {}
                     if unit_subtype == "none":
                         units_by_type[unit_type] = []
-                
+
                 if isinstance(units_by_type[unit_type], dict):
                     if unit_subtype not in units_by_type[unit_type]:
                         units_by_type[unit_type][unit_subtype] = []
@@ -255,11 +350,19 @@ def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
                     units_by_faction_type_tech[faction][unit_type] = {}
                 if unit_subtype not in units_by_faction_type_tech[faction][unit_type]:
                     units_by_faction_type_tech[faction][unit_type][unit_subtype] = {}
-                if tech_level not in units_by_faction_type_tech[faction][unit_type][unit_subtype]:
-                    units_by_faction_type_tech[faction][unit_type][unit_subtype][tech_level] = []
-                units_by_faction_type_tech[faction][unit_type][unit_subtype][tech_level].append(unit_ref)
+                if (
+                    tech_level
+                    not in units_by_faction_type_tech[faction][unit_type][unit_subtype]
+                ):
+                    units_by_faction_type_tech[faction][unit_type][unit_subtype][
+                        tech_level
+                    ] = []
+                units_by_faction_type_tech[faction][unit_type][unit_subtype][
+                    tech_level
+                ].append(unit_ref)
 
     return units_data
+
 
 def analyze_unit_data_structure(units_data: Dict) -> Dict[str, List[str]]:
     """
@@ -267,92 +370,118 @@ def analyze_unit_data_structure(units_data: Dict) -> Dict[str, List[str]]:
     Returns a dictionary with categorized fields.
     """
     structure = {
-        'root_level': set(),    # Fields at the root level of each unit
-        'data_level': set(),    # Fields inside the data[unit_name] object
-        'customparams': set(),  # Fields inside customparams
-        'sfxtypes': set(),      # Fields inside sfxtypes
-        'sounds': set(),        # Fields inside sounds
+        "root_level": set(),  # Fields at the root level of each unit
+        "data_level": set(),  # Fields inside the data[unit_name] object
+        "customparams": set(),  # Fields inside customparams
+        "sfxtypes": set(),  # Fields inside sfxtypes
+        "sounds": set(),  # Fields inside sounds
     }
-    
+
     for unit_name, unit in units_data.items():
         # Analyze root level fields
-        structure['root_level'].update(unit.keys())
-        
+        structure["root_level"].update(unit.keys())
+
         # Analyze data level fields
-        if 'data' in unit and unit_name in unit['data']:
-            unit_data = unit['data'][unit_name]
-            structure['data_level'].update(unit_data.keys())
-            
+        if "data" in unit and unit_name in unit["data"]:
+            unit_data = unit["data"][unit_name]
+
+            if type(unit_data) is not dict:
+                continue
+
+            structure["data_level"].update(unit_data.keys())
+
             # Analyze customparams
-            if 'customparams' in unit_data:
-                structure['customparams'].update(unit_data['customparams'].keys())
-            
+            if "customparams" in unit_data:
+                structure["customparams"].update(unit_data["customparams"].keys())
+
             # Analyze sfxtypes
-            if 'sfxtypes' in unit_data:
-                structure['sfxtypes'].update(unit_data['sfxtypes'].keys())
-            
+            if "sfxtypes" in unit_data:
+                structure["sfxtypes"].update(unit_data["sfxtypes"].keys())
+
             # Analyze sounds
-            if 'sounds' in unit_data:
-                structure['sounds'].update(unit_data['sounds'].keys())
+            if "sounds" in unit_data:
+                structure["sounds"].update(unit_data["sounds"].keys())
 
     # Convert sets to sorted lists for better readability
     return {k: sorted(str(x) for x in v) for k, v in structure.items()}
 
+
 def extract_all_keywords(units_data: Dict) -> List[str]:
     """
-    Extract all unique keywords from the JSON data that could be stats, 
+    Extract all unique keywords from the JSON data that could be stats,
     combat attributes, or resources for LLM formatting.
     """
     all_keywords = set()
-    
+
     # Process each unit
     for unit_name, unit in units_data.items():
         # Skip non-dict items if any
-        if not isinstance(unit, dict) or 'data' not in unit:
+        if not isinstance(unit, dict) or "data" not in unit:
             continue
-            
+
         # Extract unit data
-        if unit_name in unit['data']:
-            unit_data = unit['data'][unit_name]
-            
+        if unit_name in unit["data"]:
+            unit_data = unit["data"][unit_name]
+
+            if type(unit_data) is not dict:
+                continue
+
             # Add all top-level keys
             all_keywords.update(str(key) for key in unit_data.keys())
-            
+
             # Add all customparams keys
-            if 'customparams' in unit_data and isinstance(unit_data['customparams'], dict):
-                all_keywords.update(str(key) for key in unit_data['customparams'].keys())
-            
+            if "customparams" in unit_data and isinstance(
+                unit_data["customparams"], dict
+            ):
+                all_keywords.update(
+                    str(key) for key in unit_data["customparams"].keys()
+                )
+
             # Add weapon keys
-            if 'weapons' in unit_data and isinstance(unit_data['weapons'], dict):
-                for weapon_key, weapon_data in unit_data['weapons'].items():
+            if "weapons" in unit_data and isinstance(unit_data["weapons"], dict):
+                for weapon_key, weapon_data in unit_data["weapons"].items():
                     if isinstance(weapon_data, dict):
                         all_keywords.update(str(key) for key in weapon_data.keys())
-            
+
             # Add weapondefs keys if available
-            if 'weapondefs' in unit_data and isinstance(unit_data['weapondefs'], dict):
-                for weapon_key, weapon_data in unit_data['weapondefs'].items():
+            if "weapondefs" in unit_data and isinstance(unit_data["weapondefs"], dict):
+                for weapon_key, weapon_data in unit_data["weapondefs"].items():
                     if isinstance(weapon_data, dict):
                         all_keywords.update(str(key) for key in weapon_data.keys())
-            
+
             # Check for any additional nested dictionaries that might contain stats
             for key, value in unit_data.items():
                 if isinstance(value, dict):
                     all_keywords.update(str(k) for k in value.keys())
-    
+
     # Add some common calculated terms that might not appear directly in the data
     calculated_terms = {
-        'dps', 'damage_per_cost', 'range_min', 'range_max', 'reload_time',
-        'fire_rate', 'burst_length', 'salvo_size', 'shield_power',
-        'shield_radius', 'shield_rate', 'shield_recharge', 'armor_class',
-        'armor_type', 'damage_type', 'weapon_type', 'impulse_factor',
-        'collide_friendly'
+        "dps",
+        "damage_per_cost",
+        "range_min",
+        "range_max",
+        "reload_time",
+        "fire_rate",
+        "burst_length",
+        "salvo_size",
+        "shield_power",
+        "shield_radius",
+        "shield_rate",
+        "shield_recharge",
+        "armor_class",
+        "armor_type",
+        "damage_type",
+        "weapon_type",
+        "impulse_factor",
+        "collide_friendly",
     }
     all_keywords.update(calculated_terms)
-    
+
     # Convert any non-string values to strings and sort
     sorted_keywords = sorted(str(keyword) for keyword in all_keywords)
-    
+
     return sorted_keywords
+
 
 def generate_llm_prompt(keywords: List[str]) -> Path:
     """
@@ -381,36 +510,39 @@ def generate_llm_prompt(keywords: List[str]) -> Path:
         "## Example:",
         "```javascript",
         "export const propertyToDisplayName = {",
-        "  \"maxdamage\": \"Max Health\",",
-        "  \"firerate\": \"Fire Rate\",",
-        "  \"dps\": \"DPS\",",
-        "  \"seismicsignature\": \"Seismic Signature\",",
-        "  \"buildcostenergy\": \"Energy Cost\",",
-        "  \"buildcostmetal\": \"Metal Cost\"",
+        '  "maxdamage": "Max Health",',
+        '  "firerate": "Fire Rate",',
+        '  "dps": "DPS",',
+        '  "seismicsignature": "Seismic Signature",',
+        '  "buildcostenergy": "Energy Cost",',
+        '  "buildcostmetal": "Metal Cost"',
         "};",
         "```",
         "",
         "## Keywords to format:",
-        ""
+        "",
     ]
-    
+
     # Add all keywords to the prompt
     for keyword in sorted(keywords):
         prompt.append(f"- {keyword}")
-    
-    prompt.extend([
-        "",
-        "Please provide the complete JavaScript object with all keywords mapped to their display names.",
-        "This will be used directly in our website to show user-friendly labels for all unit statistics."
-    ])
-    
+
+    prompt.extend(
+        [
+            "",
+            "Please provide the complete JavaScript object with all keywords mapped to their display names.",
+            "This will be used directly in our website to show user-friendly labels for all unit statistics.",
+        ]
+    )
+
     # Write to file with UTF-8 encoding
     prompt_path = CACHE_DIR / "llm_prompt.txt"
     with open(prompt_path, "w", encoding="utf-8") as f:
-        f.write('\n'.join(prompt))
+        f.write("\n".join(prompt))
     logger.info(f"LLM prompt saved to: {prompt_path}")
-    
+
     return prompt_path
+
 
 def save_keywords_to_files(keywords: List[str]) -> None:
     """Save keywords to both JSON and txt formats for different uses."""
@@ -419,7 +551,7 @@ def save_keywords_to_files(keywords: List[str]) -> None:
     with open(keywords_path, "w", encoding="utf-8") as f:
         json.dump(keywords, f, indent=4)
     logger.info(f"All unique keywords saved to: {keywords_path}")
-    
+
     # Also save as plain text for easier copying to LLM
     keywords_txt_path = CACHE_DIR / "all_keywords.txt"
     with open(keywords_txt_path, "w", encoding="utf-8") as f:
@@ -427,9 +559,9 @@ def save_keywords_to_files(keywords: List[str]) -> None:
             f.write(f"{keyword}\n")
     logger.info(f"All unique keywords (plain text) saved to: {keywords_txt_path}")
 
+
 def save_results_to_json_files() -> None:
-    """Save all the collected data to their respective JSON files."""
-    # Convert sets to lists for JSON serialization
+    """Save all the collected data to their respective JSON files in the cache."""
     global factions_list, types_with_subtypes
     factions_list_sorted = sorted(list(factions_list))
     types_with_subtypes_sorted = {
@@ -437,50 +569,45 @@ def save_results_to_json_files() -> None:
         for type_name, subtypes in types_with_subtypes.items()
     }
 
-    # Define paths
-    units_data_path = CACHE_DIR / "units_data.json"
-    unit_names_path = CACHE_DIR / "unit_names_details.json"
-    units_by_faction_path = CACHE_DIR / "units_by_faction.json"
-    units_by_type_path = CACHE_DIR / "units_by_type.json"
-    units_by_tech_path = CACHE_DIR / "units_by_tech.json"
-    units_by_faction_type_tech_path = CACHE_DIR / "units_by_faction_type_tech.json"
-    factions_list_path = CACHE_DIR / "factions_list.json"
-    types_with_subtypes_path = CACHE_DIR / "types_with_subtypes.json"
+    # Define paths to cache
+    file_data_map = {
+        "units_data.json": units_data,
+        "unit_names_details.json": unit_names_details,
+        "units_by_faction.json": units_by_faction,
+        "units_by_type.json": units_by_type,
+        "units_by_tech.json": units_by_tech,
+        "units_by_faction_type_tech.json": units_by_faction_type_tech,
+        "factions_list.json": factions_list_sorted,
+        "types_with_subtypes.json": types_with_subtypes_sorted,
+    }
 
-    # Save all files
-    file_data_pairs = [
-        (units_data_path, units_data, "Units data"),
-        (unit_names_path, unit_names_details, "Unit names and details"),
-        (units_by_faction_path, units_by_faction, "Units by faction"),
-        (units_by_type_path, units_by_type, "Units by type"),
-        (units_by_tech_path, units_by_tech, "Units by tech level"),
-        (units_by_faction_type_tech_path, units_by_faction_type_tech, "Units by faction/type/tech"),
-        (factions_list_path, factions_list_sorted, "Factions list"),
-        (types_with_subtypes_path, types_with_subtypes_sorted, "Types with subtypes")
-    ]
+    for filename, data in file_data_map.items():
+        if (
+            filename in JSON_FILES_TO_CACHE
+        ):  # Ensure we only save files meant for caching initially
+            path = CACHE_DIR / filename
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+            logger.info(f"Data for {filename} saved to cache: {path}")
 
-    for path, data, description in file_data_pairs:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-        logger.info(f"{description} saved to: {path}")
 
 def print_structure_summary(structure):
     """Print a nicely formatted summary of the data structure."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(" UNIT DATA STRUCTURE SUMMARY ")
-    print("="*60)
-    
-for section, fields in structure.items():
-    print(f"\n{section.upper()}:")
+    print("=" * 60)
+
+    for section, fields in structure.items():
+        print(f"\n{section.upper()}:")
         print("-" * 40)
-        
+
         # Print in multiple columns if there are many fields
         if len(fields) > 20:
             # Calculate columns and rows
             col_width = 25
             num_cols = 3
             fields_per_col = (len(fields) + num_cols - 1) // num_cols
-            
+
             for i in range(0, fields_per_col):
                 row = []
                 for col in range(num_cols):
@@ -492,23 +619,100 @@ for section, fields in structure.items():
                 print("  " + "".join(row))
         else:
             # Single column for fewer fields
-    for field in fields:
-        print(f"  - {field}")
+            for field in fields:
+                print(f"  - {field}")
+
+
+# =====================
+# FILE MOVEMENT FUNCTION
+# =====================
+
+
+def move_generated_files_to_static(
+    files_to_copy: List[str], folder_to_copy_name: str
+) -> None:
+    """Deletes specified files and a folder from the static directory if they exist,
+    then copies them from the cache to the static directory."""
+    logger.info(f"Refreshing files in static directory: {STATIC_DIR} from cache.")
+    copied_files_count = 0
+    copied_folder = False
+
+    # Delete existing individual JSON files from static directory
+    for filename in files_to_copy:
+        destination_path = STATIC_DIR / filename
+        if destination_path.exists():
+            try:
+                destination_path.unlink()
+                logger.info(f"Deleted existing file from static: {destination_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete existing file {destination_path} from static: {e}")
+
+    # Delete existing unitpics_webp folder from static directory
+    destination_folder_path = STATIC_DIR / folder_to_copy_name
+    if destination_folder_path.exists() and destination_folder_path.is_dir():
+        try:
+            shutil.rmtree(destination_folder_path)
+            logger.info(f"Deleted existing folder from static: {destination_folder_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete existing folder {destination_folder_path} from static: {e}")
+
+    # Copy individual JSON files from cache to static
+    for filename in files_to_copy:
+        source_path = CACHE_DIR / filename
+        destination_path = STATIC_DIR / filename
+        try:
+            if source_path.exists():
+                shutil.copy2(str(source_path), str(destination_path))
+                logger.info(f"Copied file: {source_path} -> {destination_path}")
+                copied_files_count += 1
+            else:
+                logger.warning(f"File not found in cache, cannot copy: {source_path}")
+        except Exception as e:
+            logger.error(
+                f"Failed to copy file {source_path} to {destination_path}: {e}"
+            )
+
+    # Copy the unitpics_webp folder from cache to static
+    source_folder_path = CACHE_DIR / folder_to_copy_name
+    # Destination path is simply STATIC_DIR, copytree will create the folder_to_copy_name inside it.
+    # However, to match the previous shutil.move behavior where the target is the folder itself:
+    final_destination_folder_path = STATIC_DIR / folder_to_copy_name
+    try:
+        if source_folder_path.exists() and source_folder_path.is_dir():
+            shutil.copytree(str(source_folder_path), str(final_destination_folder_path))
+            logger.info(f"Copied folder: {source_folder_path} -> {final_destination_folder_path}")
+            copied_folder = True
+        else:
+            logger.warning(
+                f"Folder not found in cache or is not a directory, cannot copy: {source_folder_path}"
+            )
+    except Exception as e:
+        logger.error(
+            f"Failed to copy folder {source_folder_path} to {final_destination_folder_path}: {e}"
+        )
+
+    logger.info(
+        f"File copying to static directory complete. Files copied: {copied_files_count}. Folder copied: {copied_folder}"
+    )
+
 
 # =====================
 # MAIN EXECUTION FLOW
 # =====================
 
+
 def main():
     global units_data, unit_names_details, units_by_faction, units_by_type
     global units_by_tech, units_by_faction_type_tech, factions_list, types_with_subtypes
-    
+
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
         description="Download and parse Beyond All Reason unit files."
     )
     parser.add_argument(
-        "--update-files", action="store_true", help="Force update and redownload all files."
+        "--update-files",
+        action="store_true",
+        help="Force update and redownload all files.",
     )
     parser.add_argument(
         "--verbose", action="store_true", help="Enable verbose logging."
@@ -520,10 +724,10 @@ def main():
         logger.setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(" BEYOND ALL REASON UNIT DATA PARSER ")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Initialize empty data structures
     units_data = {}
     unit_names_details = {}
@@ -536,74 +740,142 @@ def main():
 
     # Step 1: Ensure directories exist and clean files if needed
     ensure_directories_exist()
-    
+
     if args.update_files:
-        clean_cache_directory()
-    else:
-        clean_json_files()
+        clean_cache_directory()  # This also cleans UNITPICS_DIR and UNITPICS_WEBP_DIR if they exist under CACHE_DIR
+    # Always clean JSON files from cache that are defined in JSON_FILES_TO_CACHE
+    clean_json_files()
 
     # Step 2: Download unit names/details JSON
-    names_details_path = CACHE_DIR / "units.json"
-    if args.update_files or not names_details_path.exists():
-        download_file(NAMES_DETAILS_URL, names_details_path)
+    names_details_path = (
+        CACHE_DIR / "units.json"
+    )  # This is a temporary name, will be unit_names_details.json after loading
+    if (
+        args.update_files or not (CACHE_DIR / "unit_names_details.json").exists()
+    ):  # Check for the final named file
+        download_file(
+            NAMES_DETAILS_URL, names_details_path
+        )  # Download to temporary name
+        # Rename or load and save to unit_names_details.json as per existing logic
+        # The current script loads units.json into unit_names_details variable and then saves it.
+        # Ensure this logic correctly saves it as unit_names_details.json in CACHE_DIR for moving later.
+        # For simplicity, assuming current logic saves it as unit_names_details.json
+        # If it saves as units.json, that needs to be in FILES_TO_MOVE_TO_STATIC with the correct name.
     else:
-        logger.info(f"Using cached file: {names_details_path}")
+        logger.info(
+            f"Using cached unit names details from: {CACHE_DIR / 'unit_names_details.json'}"
+        )
 
     # Step 3: Download the units folder
-    if args.update_files or len(os.listdir(UNITS_DIR)) == 0:
+    if args.update_files or not UNITS_DIR.exists() or not any(UNITS_DIR.iterdir()):
         logger.info(f"Downloading units folder from {BAR_REPO_URL}")
         downloader = Downloader(BAR_REPO_URL, "master")
         downloader.download(CACHE_DIR, UNITS_FOLDER_PATH, True)
         logger.info(f"Units folder downloaded to: {UNITS_DIR}")
     else:
-        logger.info(f"Using cached folder: {UNITS_DIR}")
+        logger.info(f"Using cached units folder: {UNITS_DIR}")
+
+    # Step 3b: Download the unitpics folder
+    if (
+        args.update_files
+        or not UNITPICS_DIR.exists()
+        or not any(UNITPICS_DIR.iterdir())
+    ):
+        logger.info(f"Downloading unitpics folder from {BAR_REPO_URL}")
+        downloader.download(CACHE_DIR, UNITPICS_FOLDER_PATH, True)
+        logger.info(f"Unitpics folder downloaded to: {UNITPICS_DIR}")
+        # Convert DDS images immediately after download if updating/downloading fresh
+        logger.info(
+            f"Converting DDS images in {UNITPICS_DIR} to WebP format in {UNITPICS_WEBP_DIR}"
+        )
+        convert_dds_to_webp(UNITPICS_DIR, UNITPICS_WEBP_DIR)
+    else:
+        logger.info(f"Using cached unitpics folder: {UNITPICS_DIR}")
+        # Optionally, convert even if using cache, if webp dir is empty or needs update
+        if not UNITPICS_WEBP_DIR.exists() or not any(UNITPICS_WEBP_DIR.iterdir()):
+            logger.info(
+                f"Cached unitpics found, but WebP directory is empty or missing. Converting now."
+            )
+            convert_dds_to_webp(UNITPICS_DIR, UNITPICS_WEBP_DIR)
+        else:
+            logger.info(f"Using cached WebP images from: {UNITPICS_WEBP_DIR}")
 
     # Step 4: Load names and details JSON
-    with open(names_details_path, "r", encoding="utf-8") as f:
-        unit_names_details = json.load(f)
-    logger.info(f"Loaded unit names and details from: {names_details_path}")
+    # Ensure unit_names_details.json exists in CACHE_DIR before this step if not downloaded fresh
+    # The current names_details_path is 'units.json', but the data is loaded into unit_names_details.
+    # The save_results_to_json_files function saves it as 'unit_names_details.json'.
+    if (CACHE_DIR / "unit_names_details.json").exists():
+        with open(CACHE_DIR / "unit_names_details.json", "r", encoding="utf-8") as f:
+            unit_names_details = json.load(f)
+        logger.info(
+            f"Loaded unit names and details from: {CACHE_DIR / 'unit_names_details.json'}"
+        )
+    elif (
+        names_details_path.exists()
+    ):  # Fallback if it was just downloaded as units.json
+        with open(names_details_path, "r", encoding="utf-8") as f:
+            unit_names_details = json.load(f)
+        # Ensure it gets saved as unit_names_details.json by save_results_to_json_files
+        logger.info(
+            f"Loaded unit names and details from temporary download: {names_details_path}"
+        )
+    else:
+        logger.error("Unit names details JSON not found after download/cache check.")
+        # Handle error or exit
 
     # Step 5: Parse units folder
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(" PARSING UNIT DATA ")
-    print("="*60)
+    print("=" * 60)
     logger.info(f"Starting parsing of units folder: {UNITS_DIR}")
     parse_units_folder(UNITS_DIR)
     logger.info(f"Finished parsing units folder. Found {len(units_data)} units.")
 
-    # Step 6: Save all results to JSON files
-    print("\n" + "="*60)
+    # Step 6: Save all results to JSON files (in cache)
+    print("\n" + "=" * 60)
     print(" SAVING RESULTS ")
-    print("="*60)
+    print("=" * 60)
     save_results_to_json_files()
-    
+
     # Step 7: Analyze the structure of units data
     structure = analyze_unit_data_structure(units_data)
     print_structure_summary(structure)
 
     # Step 8: Extract all keywords
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(" EXTRACTING KEYWORDS FOR LLM FORMATTING ")
-    print("="*60)
+    print("=" * 60)
     logger.info("Extracting all unique keywords for display name mapping...")
     all_keywords = extract_all_keywords(units_data)
     logger.info(f"Found {len(all_keywords)} unique keywords")
-    
-    # Step 9: Save keywords to files
+
+    # Step 9: Save keywords to files (all_keywords.json and all_keywords.txt in cache)
     save_keywords_to_files(all_keywords)
-    
-    # Step 10: Generate LLM prompt
+
+    # Step 10: Generate LLM prompt (llm_prompt.txt in cache)
     prompt_path = generate_llm_prompt(all_keywords)
-    
-    print("\n" + "="*60)
-    print(" COMPLETE ")
-    print("="*60)
-    print(f"LLM prompt saved to: {prompt_path}")
-    print("Next steps:")
-    print("1. Submit the contents of the LLM prompt file to ChatGPT or similar LLM")
+
+    print("\n" + "=" * 60)
+    print(" DATA PROCESSING AND IMAGE CONVERSION COMPLETE ")
+    if UNITPICS_WEBP_DIR.exists():
+        print(f"WebP images generated in: {UNITPICS_WEBP_DIR}")
+    print(f"LLM prompt saved to: {CACHE_DIR / 'llm_prompt.txt'}")
+    print("=" * 60)
+
+    # Step 11: Move necessary files to src/static
+    move_generated_files_to_static(FILES_TO_MOVE_TO_STATIC, FOLDER_TO_MOVE_TO_STATIC)
+
+    print("\n" + "=" * 60)
+    print(" SCRIPT COMPLETE ")
+    print(f"Essential files moved to: {STATIC_DIR}")
+    print("Next steps for LLM prompt (if generated):")
+    print(
+        f"1. Submit the contents of {CACHE_DIR / 'llm_prompt.txt'} to ChatGPT or similar LLM"
+    )
     print("2. Have the LLM convert raw property names to user-friendly display names")
-    print("3. Add the resulting JavaScript object to your website's code")
-    print("="*60 + "\n")
+    print("3. Add the resulting JavaScript object in src/lib/keywords_map.js")
+    print("=" * 60 + "\n")
+
 
 if __name__ == "__main__":
     main()

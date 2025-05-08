@@ -732,6 +732,9 @@
             "name": "leglob"
         },
         {
+            "name": "legamph"
+        },
+        {
             "name": "legbart"
         },
         {
@@ -766,6 +769,9 @@
         },
         {
             "name": "legacv"
+        },
+        {
+            "name": "legafcv"
         },
         {
             "name": "legca"
@@ -894,6 +900,15 @@
             "name": "legmohobpct"
         },
         {
+            "name": "legmohocon"
+        },
+        {
+            "name": "legmohoconct"
+        },
+        {
+            "name": "legmohoconin"
+        },
+        {
             "name": "legmstor"
         },
         {
@@ -1014,13 +1029,28 @@
             "name": "legtide"
         },
         {
+            "name": "legctl"
+        },
+        {
             "name": "legfhive"
         },
         {
-            "name": "legptl"
+            "name": "legfmg"
+        },
+        {
+            "name": "legfrl"
+        },
+        {
+            "name": "legptl_deprecated"
         },
         {
             "name": "legtl"
+        },
+        {
+            "name": "legtl_deprecated"
+        },
+        {
+            "name": "legfrad"
         },
         {
             "name": "leghastatus"
@@ -1054,6 +1084,9 @@
         },
         {
             "name": "leegmech"
+        },
+        {
+            "name": "legbunk"
         },
         {
             "name": "legeheatraymech"
@@ -1225,6 +1258,9 @@
         },
         {
             "name": "dice"
+        },
+        {
+            "name": "dummycom"
         },
         {
             "name": "armcomlvl10"
@@ -1896,10 +1932,28 @@
             "name": "legrwall"
         },
         {
+            "name": "armafust3"
+        },
+        {
+            "name": "armmmkrt3"
+        },
+        {
             "name": "armwint2"
         },
         {
+            "name": "corafust3"
+        },
+        {
+            "name": "cormmkrt3"
+        },
+        {
             "name": "corwint2"
+        },
+        {
+            "name": "legadveconvt3"
+        },
+        {
+            "name": "legafust3"
         },
         {
             "name": "legwint2"

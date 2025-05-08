@@ -1,10 +1,17 @@
 <script>
 	import Navbar from '$lib/components/Navbar.svelte';
+	import ImageTooltip from '$lib/components/ImageTooltip.svelte'; // Import the tooltip
+	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte'; // Import the recursive display component
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
 	import { base } from '$app/paths';
-	import { processWeapons, getUnitCombatStats, isSuicideUnit, isMineUnit } from '$lib/dpsCalculations';
+	import {
+			processWeapons,
+			getUnitCombatStats,
+			isSuicideUnit,
+			isMineUnit
+		} from '$lib/dpsCalculations';
 	import { getDisplayName, formatValueWithContext } from '$lib/propertyDisplay';
 	// View mode state
 	let viewMode = 'browse'; // 'compare' or 'browse'
@@ -323,95 +330,29 @@
 		isFullScreen = !isFullScreen;
 	}
 
-	function formatDeepObject(obj, depth = 0) {
-		if (depth > 3 || typeof obj !== 'object' || obj === null) {
-			return formatValue(obj);
-		}
-		return Object.entries(obj).map(([key, val]) => ({
-			key,
-			value:
-				typeof val === 'object' && val !== null
-					? formatDeepObject(val, depth + 1)
-					: formatValue(val, key)
-		}));
-	}
+	// Process weapons data (using imported function)
 
-	// Process weapons data
-	// REMOVE: function processWeapons(weapondefs) {
-	// REMOVE: 	if (!weapondefs) return [];
-	// REMOVE: 	return Object.entries(weapondefs).map(([key, weapon]) => {
-	// REMOVE: 		// Process damage values
-	// REMOVE: 		const damageValues = weapon.damage
-	// REMOVE: 			? Object.entries(weapon.damage).map(([type, value]) => ({
-	// REMOVE: 					type: type === 'default' ? 'Base' : type,
-	// REMOVE: 					value: Number(value || 0).toFixed(1)
-	// REMOVE: 				}))
-	// REMOVE: 			: [];
-	// REMOVE: 
-	// REMOVE: 		const maxDamage =
-	// REMOVE: 			damageValues.length > 0
-	// REMOVE: 				? Number(Math.max(...damageValues.map((d) => Number(d.value)))).toFixed(1)
-	// REMOVE: 				: '0.0';
-	// REMOVE: 
-	// REMOVE: 		// Check if weapon is an EMP/paralyzer
-	// REMOVE: 		const isEMP = weapon.paralyzer === 'Yes' || weapon.paralyzer === true;
-	// REMOVE: 
-	// REMOVE: 		// Check if weapon is a notFlame type (should be excluded from DPS)
-	// REMOVE: 		const isNotFlame = weapon.weapontype === 'notFlame';
-	// REMOVE: 
-	// REMOVE: 		// Get burst count if exists
-	// REMOVE: 		const burstCount = weapon.burst ? Number(weapon.burst) : 1;
-	// REMOVE: 
-	// REMOVE: 		// Calculate DPS, but set to 0 for EMP weapons and notFlame weapons
-	// REMOVE: 		const dps = isEMP || isNotFlame ? '0.0' : (Number(maxDamage) * burstCount / (weapon.reloadtime || 1)).toFixed(1);
-	// REMOVE: 
-	// REMOVE: 		return {
-	// REMOVE: 			name: weapon.name || key,
-	// REMOVE: 			type: weapon.weapontype || 'Unknown',
-	// REMOVE: 			damage: maxDamage,
-	// REMOVE: 			maxDamage,
-	// REMOVE: 			dps: dps,
-	// REMOVE: 			range: Number(weapon.range || 0).toFixed(1),
-	// REMOVE: 			reloadTime: Number(weapon.reloadtime || 1).toFixed(1),
-	// REMOVE: 			isEMP,
-	// REMOVE: 			isNotFlame,
-	// REMOVE: 			burstCount
-	// REMOVE: 		};
-	// REMOVE: 	});
-	// REMOVE: }
-
-	// REMOVE: function getUnitCombatStats(weapons) {
-	// REMOVE: 	if (!weapons?.length) return null;
-	// REMOVE: 	
-	// REMOVE: 	// For suicide units, we use a predefined DPS value
-	// REMOVE: 	// This depends on having the unitId, which we can only get from the parent scope
-	// REMOVE: 	// We'll check for this in the selectedUnitsData computation instead
-	// REMOVE: 	return {
-	// REMOVE: 		totalDps: Number(weapons.reduce((sum, w) => sum + Number(w.dps), 0)).toFixed(1),
-	// REMOVE: 		maxRange: Number(Math.max(...weapons.map((w) => w.range))).toFixed(1)
-	// REMOVE: 	};
-	// REMOVE: }
+	// Get combat stats (using imported function)
 
 	$: comparableProperties = getComparableProperties(selectedUnits);
 	$: selectedUnitsData = selectedUnits.map((id) => {
 		if (!id) return null;
-		
-		const unitData = $unitsData?.[id]?.data?.[id] || {};
+
+		const unitInfo = $unitsData?.[id]; // Get the full unit info from the store
+		const unitData = unitInfo?.data?.[id] || {}; // This is the specific unit data block
 		const weapons = processWeapons(unitData?.weapondefs);
-		
-		// Calculate combat stats using the centralized function
 		const combatStats = getUnitCombatStats(weapons, unitData, id);
-		
+
 		return {
-					id,
-					name: $unitNamesDetails?.units?.names?.[id] || id,
-			data: unitData,
-					faction: $unitsData?.[id]?.faction,
-					type: $unitsData?.[id]?.type,
-			subtype: $unitsData?.[id]?.subtype,
+			id,
+			name: $unitNamesDetails?.units?.names?.[id] || id,
+			data: unitData, // unitData here contains buildpic if it exists in the source
+			faction: unitInfo?.faction,
+			type: unitInfo?.type,
+			subtype: unitInfo?.subtype,
 			weapons: weapons,
 			combatStats: combatStats,
-			tech: $unitsData?.[id]?.tech_level,
+			tech: unitInfo?.tech_level,
 			isSuicideUnit: isSuicideUnit(unitData),
 			isMineUnit: isMineUnit(unitData)
 		};
@@ -450,100 +391,93 @@
 		if (!$unitsData) return [];
 
 		let units = Object.entries($unitsData)
-			.filter(([_, unit]) => unit.type && unit.type !== 'other')
-			.map(([id, unit]) => {
-				// Process weapons using the centralized function
-				const unitData = unit.data?.[id] || {};
-				const weapons = processWeapons(unitData?.weapondefs);
-				
-				// Calculate combat stats using the centralized function
-				const combatStats = getUnitCombatStats(weapons, unitData, id);
-				
+			.filter(([_, unitInfo]) => unitInfo.type && unitInfo.type !== 'other')
+			.map(([id, unitInfo]) => {
+				const unitDataForStats = unitInfo.data?.[id] || {};
+				const weapons = processWeapons(unitDataForStats?.weapondefs);
+				const combatStats = getUnitCombatStats(weapons, unitDataForStats, id);
+
 				return {
-				id,
-				name: $unitNamesDetails.units.names[id] || id,
-				type: unit.type,
-				subtype: unit.subtype,
-				tech: unit.tech_level,
-				faction: unit.faction,
-					health: unitData?.maxdamage || 0,
-					sightDistance: unitData?.sightdistance || 0,
-					maxRange: combatStats?.maxRange || 0,
-					dps: combatStats?.totalDps || 0,
-					isSuicideUnit: isSuicideUnit(unitData),
-					isMineUnit: isMineUnit(unitData),
-					armor: unitData?.armor || 0,
-				// Add all other properties from unit.data[id] that might be needed for custom filters
-				...Object.fromEntries(
-						Object.entries(unitData || {}).map(([key, value]) => [
-						key,
-						typeof value === 'object' ? JSON.stringify(value) : value
-					])
-				)
+					id,
+					name: $unitNamesDetails.units.names[id] || id,
+					type: unitInfo.type,
+					subtype: unitInfo.subtype,
+					tech: unitInfo.tech_level,
+					faction: unitInfo.faction,
+					health: unitDataForStats?.maxdamage || 0,
+					sightDistance: unitDataForStats?.sightdistance || 0,
+					maxRange: Number(combatStats?.maxRange || 0),
+					dps: Number(combatStats?.totalDps || 0),
+					isSuicideUnit: isSuicideUnit(unitDataForStats),
+					isMineUnit: isMineUnit(unitDataForStats),
+						armor: unitDataForStats?.armor || 0,
+					// Make sure 'data' contains the buildpic field needed by getUnitImagePath
+					data: unitDataForStats,
+					// Add all other properties needed for customFilters
+					...Object.fromEntries(
+						Object.entries(unitDataForStats || {}).map(([key, value]) => [
+							key,
+							typeof value === 'object' ? JSON.stringify(value) : value
+						])
+					)
 				};
-			})
-			// Apply basic filters
-			.filter((unit) => {
-				if (selectedTech !== 'all' && unit.tech !== parseInt(selectedTech)) return false;
-				if (selectedType !== 'all' && unit.type !== selectedType) return false;
-				if (selectedSubType !== 'all' && unit.subtype !== selectedSubType) return false;
-				if (selectedFaction !== 'all' && unit.faction !== selectedFaction) return false;
-
-				// Search query
-				if (searchQuery) {
-					const query = searchQuery.toLowerCase();
-					return (
-						unit.name.toLowerCase().includes(query) ||
-						unit.type.toLowerCase().includes(query) ||
-						unit.subtype.toLowerCase().includes(query)
-					);
-				}
-
-				return true;
 			});
+			// ... (filters logic remains here) ...
+
+		// Apply filters
+		if (searchQuery) {
+			units = units.filter((unit) =>
+				unit.name.toLowerCase().includes(searchQuery.toLowerCase())
+			);
+		}
+		if (selectedTech !== 'all') {
+			units = units.filter((unit) => unit.tech === parseInt(selectedTech));
+		}
+		if (selectedType !== 'all') {
+			units = units.filter((unit) => unit.type === selectedType);
+		}
+		if (selectedSubType !== 'all') {
+			units = units.filter((unit) => unit.subtype === selectedSubType);
+		}
+		if (selectedFaction !== 'all') {
+			units = units.filter((unit) => unit.faction === selectedFaction);
+		}
 
 		// Apply custom filters
 		customFilters.forEach((filter) => {
-			if (filter.field && filter.operator && filter.value !== '') {
+			if (filter.field && filter.value !== '') {
 				units = units.filter((unit) => {
-					const value = unit[filter.field];
-					const filterValue = Number(filter.value);
+					const unitValue = parseFloat(unit[filter.field]);
+					const filterValue = parseFloat(filter.value);
+					if (isNaN(unitValue) || isNaN(filterValue)) return false; // Skip if not comparable numbers
 
-					switch (filter.operator) {
-						case '>':
-							return value > filterValue;
-						case '<':
-							return value < filterValue;
-						case '=':
-							return value === filterValue;
-						default:
-							return true;
-					}
+					if (filter.operator === '>') return unitValue > filterValue;
+					if (filter.operator === '<') return unitValue < filterValue;
+					if (filter.operator === '=') return unitValue === filterValue;
+					return false;
 				});
 			}
 		});
-
+		
 		// Apply sorting
 		return units.sort((a, b) => {
-			const aValue = a[sortBy];
-			const bValue = b[sortBy];
-			const modifier = sortOrder === 'asc' ? 1 : -1;
+			const valA = a[sortBy];
+			const valB = b[sortBy];
 
-			// Handle null/undefined values
-			if (aValue === undefined || aValue === null) return 1;
-			if (bValue === undefined || bValue === null) return -1;
+			let comparison = 0;
 
-			// Sort strings case-insensitively
-			if (typeof aValue === 'string' && typeof bValue === 'string') {
-				// Check if these are actually numeric values stored as strings (like DPS)
-				if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
-					return (Number(aValue) - Number(bValue)) * modifier;
-				}
-				return aValue.toLowerCase().localeCompare(bValue.toLowerCase()) * modifier;
+			const numA = Number(valA);
+			const numB = Number(valB);
+
+			if (!isNaN(numA) && !isNaN(numB)) {
+				comparison = numA - numB;
+			} else if (typeof valA === 'string' && typeof valB === 'string') {
+				comparison = valA.localeCompare(valB);
+			} else {
+				// Fallback for mixed types or other types
+				comparison = String(valA).localeCompare(String(valB));
 			}
-
-			// Sort numbers
-			return (aValue - bValue) * modifier;
+			return sortOrder === 'asc' ? comparison : -comparison;
 		});
 	}
 
@@ -606,7 +540,7 @@
 			<h2 class="text-xl font-semibold text-white">Add Columns to Table</h2>
 			<p class="text-sm text-gray-400 mt-1">Select columns to add to your comparison view</p>
 		`;
-		
+
 		const content = document.createElement('div');
 		content.className = 'max-h-[60vh] overflow-auto';
 
@@ -705,9 +639,9 @@
 			unitData?.data?.[unitId]?.[unitId]?.maxdamage,
 			unitData?.data?.[unitId]?.maxdamage
 		];
-		
+
 		// Return the first non-undefined value, or 0 if all are undefined
-		return paths.find(value => value !== undefined) || 0;
+		return paths.find((value) => value !== undefined) || 0;
 	}
 
 	// Helper function to get unit metal cost value
@@ -721,7 +655,7 @@
 			unitData?.data?.[unitId]?.buildcostmetal,
 			$unitsData?.[unitId]?.data?.[unitId]?.buildcostmetal,
 			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.buildcostmetal,
-			
+
 			// Check cost object
 			unitData?.cost?.metal,
 			unitData?.[unitId]?.cost?.metal,
@@ -729,49 +663,55 @@
 			unitData?.data?.[unitId]?.[unitId]?.cost?.metal,
 			$unitsData?.[unitId]?.data?.[unitId]?.cost?.metal,
 			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.cost?.metal,
-			
+
 			// Check metalcost property
 			unitData?.metalcost,
 			unitData?.[unitId]?.metalcost,
 			$unitsData?.[unitId]?.data?.[unitId]?.metalcost,
-			
+
 			// Check in customparams
 			unitData?.customparams?.buildcostmetal,
 			unitData?.[unitId]?.customparams?.buildcostmetal,
 			$unitsData?.[unitId]?.data?.[unitId]?.customparams?.buildcostmetal
 		];
-		
+
 		// Return the first non-undefined, non-null value, or 0 if all are undefined/null
-		return paths.find(value => value !== undefined && value !== null) || 0;
+		return paths.find((value) => value !== undefined && value !== null) || 0;
+	}
+
+	// Tooltip state (keep for hover on name? Or remove if static image is enough? Let's keep for now)
+	let showTooltip = false;
+	let tooltipImageUrl = '';
+	let tooltipX = 0;
+	let tooltipY = 0;
+
+	// Update getUnitImagePath function here
+	function getUnitImagePath(unitData) {
+		if (!unitData || !unitData.buildpic) return '';
+		const buildpic = unitData.buildpic;
+		const parts = buildpic.split('/');
+		const filenameWithExt = parts.pop();
+		const category = parts.pop();
+		const filename = filenameWithExt.split('.')[0].toLowerCase();
+
+		if (category) {
+			return `${base}/unitpics_webp/${category}/${filename}.webp`;
+		} else {
+			console.warn(`Buildpic might be missing category: ${buildpic}. Using fallback path.`);
+			return `${base}/unitpics_webp/${filename}.webp`;
+		}
+	}
+
+	function showUnitTooltip(event) {
+		tooltipX = event.clientX;
+		tooltipY = event.clientY;
+		showTooltip = true;
+	}
+
+	function hideUnitTooltip() {
+		showTooltip = false;
 	}
 </script>
-
-<style>
-	.fullscreen-container {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-		z-index: 50;
-		background-color: rgb(17, 24, 39);
-		padding: 1rem;
-		overflow: auto;
-	}
-	
-	.fullscreen-table {
-		height: calc(100vh - 3rem); /* Account for the button height */
-		overflow: auto;
-	}
-	
-	.fullscreen-container .table-controls {
-		position: sticky;
-		top: 0;
-		z-index: 60;
-		padding: 0.5rem 0;
-		background-color: rgb(17, 24, 39);
-	}
-</style>
 
 <div class="min-h-screen bg-gray-900 text-gray-100">
 	<Navbar />
@@ -851,12 +791,12 @@
 		{#if viewMode === 'browse'}
 			<!-- Browse Mode -->
 			<div class="rounded-lg bg-gray-800/50 p-6">
-	<!-- Search Bar -->
+				<!-- Search Bar -->
 				<div class="mb-6">
 					<div class="relative">
-		<input
-			type="text"
-			bind:value={searchQuery}
+						<input
+							type="text"
+							bind:value={searchQuery}
 							placeholder="Search units..."
 							class="w-full rounded-lg bg-gray-900 py-2 pl-10 pr-4 text-gray-200 placeholder-gray-500"
 						/>
@@ -917,7 +857,7 @@
 								<option value={subType}>{subType}</option>
 							{/each}
 						</select>
-	</div>
+					</div>
 
 					<div class="space-y-2">
 						<label for="faction" class="text-sm text-gray-400">Faction</label>
@@ -968,7 +908,7 @@
 													<option value={field.id}>{field.name}</option>
 												{/each}
 											</optgroup>
-			{/each}
+										{/each}
 									</select>
 
 									<select
@@ -1042,31 +982,45 @@
 
 				<!-- Results Table Container -->
 				<div class="relative {isFullScreen ? 'fullscreen-container' : ''}">
-					<div class="table-controls flex justify-end mb-2">
+					<div class="table-controls mb-2 flex justify-end">
 						<button
 							on:click={toggleFullScreen}
 							class="flex items-center gap-2 rounded-lg bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
-							aria-label={isFullScreen ? "Exit fullscreen" : "Enter fullscreen"}
+							aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
 						>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								{#if isFullScreen}
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-										d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5" />
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5"
+									/>
 								{:else}
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-										d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" />
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"
+									/>
 								{/if}
 							</svg>
 							{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
 						</button>
 					</div>
-					<div class="overflow-x-auto {isFullScreen ? 'fullscreen-table' : 'max-h-[70vh]'}" id="browse-table-container">
+					<div
+						class="overflow-x-auto {isFullScreen ? 'fullscreen-table' : 'max-h-[70vh]'}"
+						id="browse-table-container"
+					>
 						<table class="relative w-full">
 							<thead>
-								<tr class="sticky top-0 z-20 border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm">
+								<tr
+									class="sticky top-0 z-20 border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm"
+								>
 									{#each columns.filter((col) => col.visible) as column}
 										<th
-											class="cursor-pointer whitespace-nowrap p-3 text-left text-gray-400 hover:text-white {column.id === 'unit'
+											class="cursor-pointer whitespace-nowrap p-3 text-left text-gray-400 hover:text-white {column.id ===
+											'unit'
 												? 'sticky left-0 z-30 min-w-[250px] bg-gray-900/95 backdrop-blur-sm'
 												: ''}"
 											on:click={() => handleColumnSort(column)}
@@ -1097,83 +1051,129 @@
 							</thead>
 							<tbody class="divide-y divide-gray-800/50">
 								{#each getFilteredAndSortedUnits() as unit}
+									{@const browseImagePath = getUnitImagePath(unit.data)}
 									<tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
 										<td class="sticky left-0 z-10 bg-gray-900 p-3">
-											<div class="flex min-w-[250px] items-center justify-between">
-												<div class="flex items-center gap-3">
-													<button
-														class="rounded-lg {selectedUnits.includes(unit.id) ? 'bg-red-600/20 hover:bg-red-600/30' : 'bg-teal-600/20 hover:bg-teal-600/30'} px-2 py-1 text-xs flex items-center gap-1.5 group"
-														on:click={() => {
-															if (selectedUnits.includes(unit.id)) {
-																// Remove the unit and compact the array
-																selectedUnits = selectedUnits
-																	.filter(u => u && u !== unit.id) // Keep only non-empty units that aren't the one we're removing
-																	.concat(selectedUnits.length < 2 ? [''] : []); // Add empty slot if needed to maintain minimum of 2
-																// Ensure minimum of 2 slots
-																while (selectedUnits.length < 2) {
-																	selectedUnits = [...selectedUnits, ''];
-																}
-																showNotification(`Removed ${unit.name} from comparison`);
-															} else {
-																const emptySlot = selectedUnits.findIndex(u => !u);
-																if (emptySlot >= 0) {
-																	selectedUnits[emptySlot] = unit.id;
-																	selectedUnits = selectedUnits;
-																} else {
-																	selectedUnits = [...selectedUnits, unit.id];
-																}
-																showNotification(`Added ${unit.name} to comparison`);
-															}
-														}}
-														aria-label={selectedUnits.includes(unit.id) ? "Remove from comparison" : "Add to comparison"}
-													>
-														<span class={selectedUnits.includes(unit.id) ? 'text-red-400' : 'text-teal-400'}>
-															<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-																{#if selectedUnits.includes(unit.id)}
-																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-																{:else}
-																	<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-																{/if}
-															</svg>
-														</span>
-														<span class="group-hover:opacity-100 opacity-70">
-															{selectedUnits.includes(unit.id) ? 'Remove' : 'Compare'}
-														</span>
-													</button>
-													<a href="{base}/unit?name={unit.id}" class="text-teal-400 hover:underline">
-														{unit.name}
-													</a>
+											<div class="flex min-w-[300px] items-center gap-4">
+												<!-- Increased min-width and added gap -->
+												<!-- Static Image -->
+												<div
+													class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-gray-800/50"
+												>
+													{#if browseImagePath}
+														<img
+															src={browseImagePath}
+															alt={unit.name}
+															class="max-h-full max-w-full object-contain"
+															loading="lazy"
+														/>
+													{:else}
+														<span class="text-xs text-gray-500">?</span> <!-- Placeholder -->
+													{/if}
 												</div>
-												<div class="flex h-6 items-center gap-2">
-													<span
-														class="rounded-full bg-teal-500/20 px-2 py-0.5 text-xs text-teal-400"
-													>
-														{unit.faction === 'arm' ? 'ARM' : 'COR'}
-													</span>
-													<span
-														class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
-													>
-														{unit.type}
-													</span>
-													{#if unit.subtype && unit.subtype !== 'none'}
-														<span
-															class="rounded-full bg-pink-500/20 px-2 py-0.5 text-xs text-pink-400"
+												<!-- Unit Name and Controls -->
+												<div class="flex flex-grow items-center justify-between">
+													<div class="flex items-center gap-2">
+														<button
+															class="rounded-lg {selectedUnits.includes(unit.id)
+																? 'bg-red-600/20 hover:bg-red-600/30'
+																: 'bg-teal-600/20 hover:bg-teal-600/30'} group flex items-center gap-1.5 px-2 py-1 text-xs"
+															on:click={() => {
+																if (selectedUnits.includes(unit.id)) {
+																	// Remove the unit and compact the array
+																	selectedUnits = selectedUnits
+																		.filter((u) => u && u !== unit.id) // Keep only non-empty units that aren't the one we're removing
+																		.concat(selectedUnits.length < 2 ? [''] : []); // Add empty slot if needed to maintain minimum of 2
+																	// Ensure minimum of 2 slots
+																	while (selectedUnits.length < 2) {
+																		selectedUnits = [...selectedUnits, ''];
+																	}
+																	showNotification(`Removed ${unit.name} from comparison`);
+																} else {
+																	const emptySlot = selectedUnits.findIndex((u) => !u);
+																	if (emptySlot >= 0) {
+																		selectedUnits[emptySlot] = unit.id;
+																		selectedUnits = selectedUnits;
+																	} else {
+																		selectedUnits = [...selectedUnits, unit.id];
+																	}
+																	showNotification(`Added ${unit.name} to comparison`);
+																}
+															}}
+															aria-label={selectedUnits.includes(unit.id)
+																? 'Remove from comparison'
+																: 'Add to comparison'}
 														>
-															{unit.subtype}
-														</span>
-													{/if}
-													<span
-														class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400"
-													>
-														T{unit.tech}
-													</span>
-													{#if unit.isSuicideUnit}
-														<span
-															class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400"
+															<span
+																class={selectedUnits.includes(unit.id)
+																	? 'text-red-400'
+																	: 'text-teal-400'}
+															>
+																<svg
+																	class="h-3 w-3"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	{#if selectedUnits.includes(unit.id)}
+																		<path
+																			stroke-linecap="round"
+																			stroke-linejoin="round"
+																			stroke-width="2"
+																			d="M20 12H4"
+																		/>
+																	{:else}
+																		<path
+																			stroke-linecap="round"
+																			stroke-linejoin="round"
+																			stroke-width="2"
+																			d="M12 4v16m8-8H4"
+																		/>
+																	{/if}
+																</svg>
+															</span>
+															<span class="opacity-70 group-hover:opacity-100">
+																{selectedUnits.includes(unit.id) ? 'Remove' : 'Compare'}
+															</span>
+														</button>
+														<a
+															href="{base}/unit?name={unit.id}"
+															class="text-teal-400 hover:underline"
 														>
-															{unit.isMineUnit ? 'Mine' : 'Suicide'}
+															{unit.name}
+														</a>
+													</div>
+													<div class="flex h-6 items-center gap-2">
+														<span
+															class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400"
+														>
+															{unit.faction === 'arm' ? 'ARM' : 'COR'}
 														</span>
-													{/if}
+														<span
+															class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
+														>
+															{unit.type}
+														</span>
+														{#if unit.subtype && unit.subtype !== 'none'}
+															<span
+																class="rounded-full bg-pink-500/20 px-2 py-0.5 text-xs text-pink-400"
+															>
+																{unit.subtype}
+															</span>
+														{/if}
+														<span
+															class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400"
+														>
+															T{unit.tech}
+														</span>
+														{#if unit.isSuicideUnit}
+															<span
+																class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400"
+															>
+																{unit.isMineUnit ? 'Mine' : 'Suicide'}
+															</span>
+														{/if}
+													</div>
 												</div>
 											</div>
 										</td>
@@ -1191,7 +1191,9 @@
 														unit.data?.buildcostmetal,
 														unit.data?.[unit.id]?.buildcostmetal
 													]}
-													{metalPaths.find(v => v !== undefined && v !== null) || getUnitMetal(unit.data, unit.id) || 0}
+													{metalPaths.find((v) => v !== undefined && v !== null) ||
+														getUnitMetal(unit.data, unit.id) ||
+														0}
 												{:else if column.id === 'maxdamage' || column.id === 'health'}
 													{#if $unitsData?.[unit.id]?.data?.[unit.id]?.[column.id] !== undefined}
 														{$unitsData?.[unit.id]?.data?.[unit.id]?.[column.id]}
@@ -1203,14 +1205,14 @@
 														{0}
 													{/if}
 												{:else}
-												{formatValue(unit[column.id], column.id)}
+													{formatValueWithContext(unit[column.id], column.id)} 
 												{/if}
-								</td>
+											</td>
 										{/each}
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
@@ -1309,33 +1311,53 @@
 												: ''}"
 										>
 											{#if unit}
-												<div class="space-y-1">
-													<a
-														href="{base}/unit?name={unit.id}"
-														class="inline-block font-medium text-white transition-colors hover:text-teal-400"
+												{@const compareImagePath = getUnitImagePath(unit.data)}
+												<!-- Add image to header -->
+												<div class="flex flex-col items-center gap-3">
+													<div
+														class="flex h-16 w-16 items-center justify-center overflow-hidden rounded bg-gray-700/50"
 													>
-														{unit.name}
-													</a>
-													<div class="flex justify-center gap-2 text-sm">
-														<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
-															{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
-														</span>
-														<span class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-400">
-															{unit.type}
-														</span>
-														{#if unit.subtype && unit.subtype !== 'none'}
-															<span class="rounded-full bg-pink-500/20 px-2 py-0.5 text-pink-400">
-																{unit.subtype}
-															</span>
+														{#if compareImagePath}
+															<img
+																src={compareImagePath}
+																alt={unit.name}
+																class="max-h-full max-w-full object-contain"
+																loading="lazy"
+															/>
+														{:else}
+															<span class="text-xs text-gray-500">?</span>
 														{/if}
-														<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
-															Tech {unit.tech}
-														</span>
-														{#if unit?.isSuicideUnit}
-															<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
-																{unit.isMineUnit ? 'Mine' : 'Suicide'}
+													</div>
+													<div class="space-y-1">
+														<a
+															href="{base}/unit?name={unit.id}"
+															class="inline-block font-medium text-white transition-colors hover:text-teal-400"
+														>
+															{unit.name}
+														</a>
+														<div class="flex justify-center gap-2 text-sm">
+															<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
+																{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
 															</span>
-														{/if}
+															<span
+																class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-400"
+															>
+																{unit.type}
+															</span>
+															{#if unit.subtype && unit.subtype !== 'none'}
+																<span class="rounded-full bg-pink-500/20 px-2 py-0.5 text-pink-400">
+																	{unit.subtype}
+																</span>
+															{/if}
+															<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
+																Tech {unit.tech}
+															</span>
+															{#if unit?.isSuicideUnit}
+																<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
+																	{unit.isMineUnit ? 'Mine' : 'Suicide'}
+																</span>
+															{/if}
+														</div>
 													</div>
 												</div>
 											{:else}
@@ -1406,12 +1428,16 @@
 																				<div class="mb-2 font-medium text-gray-300">
 																					{weapon.type}
 																					{#if weapon.isEMP}
-																						<span class="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400">
+																						<span
+																							class="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
+																						>
 																							EMP
 																						</span>
 																					{/if}
 																					{#if weapon.isNotFlame}
-																						<span class="ml-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-400">
+																						<span
+																							class="ml-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-400"
+																						>
 																							Special
 																						</span>
 																					{/if}
@@ -1436,24 +1462,34 @@
 																						>
 																					</div>
 																					{#if weapon.isEMP}
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">{getDisplayName('paralyzemultiplier')}</span>
-																						<span class="font-medium text-yellow-400">x{weapon.paralyzeMultiplier}</span>
-																					</div>
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">Paralyze DPS</span>
-																						<span class="font-medium text-yellow-400">{weapon.paralyzeDps}</span>
-																					</div>
+																						<div class="flex justify-between">
+																							<span class="text-gray-400"
+																								>{getDisplayName('paralyzemultiplier')}</span
+																							>
+																							<span class="font-medium text-yellow-400"
+																								>x{weapon.paralyzeMultiplier}</span
+																							>
+																						</div>
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">Paralyze DPS</span>
+																							<span class="font-medium text-yellow-400"
+																								>{weapon.paralyzeDps}</span
+																							>
+																						</div>
 																					{/if}
 																					{#if weapon.burstCount > 1}
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">Burst</span>
-																						<span class="font-medium text-green-400">x{weapon.burstCount}</span>
-																					</div>
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">Burst</span>
+																							<span class="font-medium text-green-400"
+																								>x{weapon.burstCount}</span
+																							>
+																						</div>
 																					{/if}
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Range</span>
-																						<span class="font-medium text-blue-400">{weapon.range}</span>
+																						<span class="font-medium text-blue-400"
+																							>{weapon.range}</span
+																						>
 																					</div>
 																					<div class="flex justify-between">
 																						<span class="text-gray-400">Reload</span>
@@ -1498,90 +1534,9 @@
 															<span class="text-gray-500">—</span>
 														{:else if typeof value === 'object' && value !== null}
 															{#if expandedFields.has(prop)}
-																{#if prop === 'buildoptions'}
-																	<div class="grid gap-2">
-																		{#each Object.entries(value) as [index, unitId]}
-																			{@const unitInfo = $unitsData?.[unitId] || {}}
-																			{@const unitData = unitInfo?.data?.[unitId] || {}}
-																			{@const unitTechLevel = unitInfo?.tech_level || 1}
-																			<a 
-																				href="{base}/unit?name={unitId}" 
-																				class="group flex items-start gap-3 rounded-lg bg-gray-800/90 p-3 transition-all hover:bg-gray-700/80 hover:shadow-md"
-																			>
-																				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-700/70 text-lg font-bold text-teal-300">
-																					{unitId.slice(0, 2).toUpperCase()}
-																				</div>
-																				<div class="flex flex-1 flex-col">
-																					<div class="flex items-center justify-between">
-																						<span class="text-sm font-medium text-white">
-																							{$unitNamesDetails?.units?.names?.[unitId] || unitId}
-																						</span>
-																						<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400">
-																							T{unitTechLevel}
-																						</span>
-																					</div>
-																					<div class="mt-1 flex flex-wrap gap-1">
-																						<span class="rounded-full bg-teal-500/20 px-1.5 py-0.5 text-xs text-teal-400">
-																							{unitInfo?.faction === 'arm' ? 'ARM' : 'COR'}
-																						</span>
-																						{#if unitInfo?.type}
-																							<span class="rounded-full bg-purple-500/20 px-1.5 py-0.5 text-xs text-purple-400">
-																								{unitInfo.type}
-																						</span>
-																						{/if}
-																					</div>
-																					{#if unitData}
-																						<div class="mt-1.5 grid grid-cols-3 gap-1 text-xs">
-																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
-																								<span class="text-gray-400">HP:</span>
-																								<span class="font-medium text-red-400">
-																								{getUnitHealth(unitData, unitId)}
-																								</span>
-																							</div>
-																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
-																								<span class="text-gray-400">Metal:</span>
-																								<span class="font-medium text-blue-400">
-																								{getUnitMetal(unitData, unitId)}
-																								</span>
-																							</div>
-																							<div class="flex justify-between rounded bg-gray-700/30 px-1.5 py-0.5">
-																								<span class="text-gray-400">Time:</span>
-																								<span class="font-medium text-green-400">
-																								{unitData[unitId]?.buildtime || unitData.buildtime
-																									? formatValueWithContext(
-																											unitData[unitId]?.buildtime || unitData.buildtime,
-																											'buildtime'
-																										)
-																									: '0s'}
-																								</span>
-																							</div>
-																						</div>
-																					{/if}
-																				</div>
-																			</a>
-																		{/each}
-																	</div>
-																{:else}
-																	<div class="flex flex-col gap-2">
-																		{#each formatDeepObject(value) as { key, value }}
-																			<div class="flex items-center gap-2 px-2 py-1 hover:bg-gray-800/50">
-																				<span class="text-sm text-gray-400">{getDisplayName(key)}:</span>
-																				{#if Array.isArray(value)}
-																					<div class="ml-4 space-y-1">
-																						{#each value as item}
-																							<div class="flex items-center gap-2">
-																								<span class="text-sm text-gray-400">{getDisplayName(item.key)}:</span>
-																								<span class="text-sm text-gray-200">{item.value}</span>
-																							</div>
-																						{/each}
-																					</div>
-																				{:else}
-																					<span class="text-sm text-gray-200">{value}</span>
-																				{/if}
-																			</div>
-																		{/each}
-																	</div>
-																{/if}
+																<div class="space-y-1 overflow-y-auto rounded-md bg-gray-850/50 p-2" style="max-height: 32rem;">
+																	<RecursiveObjectDisplay data={value} />
+																</div>
 																<button
 																	class="mt-2 text-xs text-teal-400 hover:text-teal-300"
 																	on:click={() => toggleExpanded(prop)}
@@ -1631,7 +1586,10 @@
 	<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
 		{#each notifications as notification (notification.id)}
 			<div
-				class="rounded-lg bg-gray-900 px-4 py-3 text-sm shadow-lg ring-1 {notification.type === 'success' ? 'text-teal-400 ring-teal-500/50' : 'text-red-400 ring-red-500/50'}"
+				class="rounded-lg bg-gray-900 px-4 py-3 text-sm shadow-lg ring-1 {notification.type ===
+				'success'
+					? 'text-teal-400 ring-teal-500/50'
+					: 'text-red-400 ring-red-500/50'}"
 				transition:fly={{ y: 20, duration: 300 }}
 			>
 				{notification.message}
@@ -1639,4 +1597,32 @@
 		{/each}
 	</div>
 
+	<ImageTooltip imageUrl={tooltipImageUrl} visible={showTooltip} x={tooltipX} y={tooltipY} />
 </div>
+
+<style>
+	.fullscreen-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		z-index: 50;
+		background-color: rgb(17, 24, 39);
+		padding: 1rem;
+		overflow: auto;
+	}
+
+	.fullscreen-table {
+		height: calc(100vh - 3rem); /* Account for the button height */
+		overflow: auto;
+	}
+
+	.fullscreen-container .table-controls {
+		position: sticky;
+		top: 0;
+		z-index: 60;
+		padding: 0.5rem 0;
+		background-color: rgb(17, 24, 39);
+	}
+</style>
