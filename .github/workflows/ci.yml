@@ -36,6 +36,15 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Restore units data cache
+        uses: actions/cache@v3
+        id: units-cache
+        with:
+          path: units-parser/cache
+          key: ${{ runner.os }}-units-data-${{ hashFiles('units-parser/main.py', 'units-parser/GitHubDownloader.py') }}
+          restore-keys: |
+            ${{ runner.os }}-units-data-
+
       - name: Install Python dependencies
         run: |
           cd units-parser
