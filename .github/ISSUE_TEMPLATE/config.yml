@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and Discussions
+    url: https://github.com/MotionCorrect/unit-comparison-tool/discussions
+    about: Ask questions and discuss ideas here.
+  - name: Documentation
+    url: https://github.com/MotionCorrect/unit-comparison-tool#readme
+    about: Check the README for basic documentation.

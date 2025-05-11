@@ -139,7 +139,7 @@ BAR GitHub Repository → Python Parser → Processed JSON/WebP → SvelteKit Fr
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/unit-comparison-tool.git
+   git clone https://github.com/MotionCorrect/unit-comparison-tool.git
    cd unit-comparison-tool
    ```
 
@@ -252,7 +252,7 @@ Contributions are welcome! Here's how you can help:
 2. **Clone your fork:**
 
    ```bash
-   git clone https://github.com/yourusername/unit-comparison-tool.git
+   git clone https://github.com/MotionCorrect/unit-comparison-tool.git
    cd unit-comparison-tool
    ```
 
