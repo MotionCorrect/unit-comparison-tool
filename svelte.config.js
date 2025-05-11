@@ -7,14 +7,12 @@ const config = {
 	kit: {
 		//"set MANUAL_BUILD=true && pnpm run build" on windows to build the website
 		paths: {
-			base: process.env.MANUAL_BUILD === 'true' ? '/unit-comparison-tool' : ''
+			base: process.env.BASE_PATH ?? ''
 		},
 		adapter: adapter({
-			pages: 'docs',
-			assets: 'docs'
-			// fallback: 'index.html',
-			// precompress: false,
-			// strict: false
+			pages: 'build',
+			assets: 'build',
+			fallback: '404.html'
 		}),
 		prerender: {
 			handleHttpError: 'warn',

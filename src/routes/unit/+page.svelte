@@ -1,9 +1,8 @@
 <script>
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount } from 'svelte';
 	import { loadData, unitsData, unitNamesDetails, unitIconMap } from '$lib/data';
 	import { slide } from 'svelte/transition';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import ImageTooltip from '$lib/components/ImageTooltip.svelte';
 	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte';
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
@@ -30,12 +29,6 @@
 	let weaponsData = [];
 	let weaponsForDisplay = [];
 	let loading = false;
-
-	// Tooltip state
-	let showTooltip = false;
-	let tooltipImageUrl = '';
-	let tooltipX = 0;
-	let tooltipY = 0;
 
 	// Use reactive variable for static image path again
 	$: staticImagePath = getUnitImagePath(unitData);
@@ -441,7 +434,6 @@
 
 <div class="min-h-screen bg-gray-900 text-gray-100">
 	<Navbar />
-	<ImageTooltip imageUrl={tooltipImageUrl} visible={showTooltip} x={tooltipX} y={tooltipY} />
 	<div class="container mx-auto max-w-7xl px-4 py-8">
 		{#if unit && unitData}
 			<div class="space-y-8">

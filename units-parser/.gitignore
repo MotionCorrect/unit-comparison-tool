@@ -1,6 +1,6 @@
 units
 units.json
-cache
+cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

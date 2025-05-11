@@ -856,25 +856,6 @@
 		min-height: 100vh;
 	}
 
-	.btn {
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 0.5rem;
-		cursor: pointer;
-		font-weight: bold;
-		background-color: #2d2d2d;
-		color: #fff;
-		transition: background-color 0.2s ease;
-	}
-
-	.btn.active {
-		background-color: #4caf50;
-	}
-
-	.btn:hover {
-		background-color: #444;
-	}
-
 	.graph-wrapper {
 		position: relative;
 		width: 100%;
@@ -941,20 +922,6 @@
 		visibility: visible;
 	}
 
-	/* Scrollbar styling */
-	.tooltip ::-webkit-scrollbar {
-		width: 4px;
-	}
-
-	.tooltip ::-webkit-scrollbar-track {
-		background: rgba(0, 0, 0, 0.1);
-	}
-
-	.tooltip ::-webkit-scrollbar-thumb {
-		border-radius: 0.25rem;
-		background-color: rgb(55, 65, 81);
-	}
-
 	/* Update tooltip styles */
 	.tooltip {
 		@apply pointer-events-auto invisible fixed z-50 w-80 opacity-0 transition-all duration-200;
@@ -966,19 +933,6 @@
 
 	.tooltip:hover {
 		@apply opacity-100;
-	}
-
-	/* Scrollbar styling */
-	.tooltip ::-webkit-scrollbar {
-		@apply w-1;
-	}
-
-	.tooltip ::-webkit-scrollbar-track {
-		@apply bg-gray-800;
-	}
-
-	.tooltip ::-webkit-scrollbar-thumb {
-		@apply rounded bg-gray-600;
 	}
 
 	/* Graph container styling */

@@ -1,6 +1,5 @@
 <script>
 	import Navbar from '$lib/components/Navbar.svelte';
-	import ImageTooltip from '$lib/components/ImageTooltip.svelte'; // Import the tooltip
 	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte'; // Import the recursive display component
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
@@ -774,12 +773,6 @@
 		}, 3000);
 	}
 
-	// Tooltip state (keep for hover on name? Or remove if static image is enough? Let's keep for now)
-	let showTooltip = false;
-	let tooltipImageUrl = '';
-	let tooltipX = 0;
-	let tooltipY = 0;
-
 	// Update getUnitImagePath function here
 	function getUnitImagePath(unitData) {
 		if (!unitData || !unitData.buildpic) return '';
@@ -801,16 +794,6 @@
 	function getUnitIconPath(unitId) {
 		if (!$unitIconMap || !unitId || !$unitIconMap[unitId]) return '';
 		return `${base}/${$unitIconMap[unitId]}`;
-	}
-
-	function showUnitTooltip(event) {
-		tooltipX = event.clientX;
-		tooltipY = event.clientY;
-		showTooltip = true;
-	}
-
-	function hideUnitTooltip() {
-		showTooltip = false;
 	}
 </script>
 
@@ -1715,8 +1698,6 @@
 			</div>
 		{/each}
 	</div>
-
-	<ImageTooltip imageUrl={tooltipImageUrl} visible={showTooltip} x={tooltipX} y={tooltipY} />
 </div>
 
 <style>
