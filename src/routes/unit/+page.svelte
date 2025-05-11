@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte';
-	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
+	import { loadData, unitsData, unitNamesDetails, unitIconMap } from '$lib/data';
 	import { slide } from 'svelte/transition';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import ImageTooltip from '$lib/components/ImageTooltip.svelte';
@@ -28,6 +28,7 @@
 	let displayName = '';
 	let groupedData = {};
 	let weaponsData = [];
+	let weaponsForDisplay = [];
 	let loading = false;
 
 	// Tooltip state
@@ -38,7 +39,8 @@
 
 	// Use reactive variable for static image path again
 	$: staticImagePath = getUnitImagePath(unitData);
-
+	$: iconPath = $unitIconMap ? getUnitIconPath(name) : ''; // Check if store is ready
+	console.log(iconPath);
 	// Function to get image path (Restored original logic)
 	function getUnitImagePath(currentUnitData) {
 		if (!currentUnitData || !currentUnitData.buildpic) return '';
@@ -51,6 +53,16 @@
 			return `${base}/unitpics_webp/${category}/${filename}.webp`;
 		}
 		return `${base}/unitpics_webp/${filename}.webp`;
+	}
+
+	// Function to get unit icon path
+	function getUnitIconPath(unitId) {
+		console.log(unitIconMap, unitId, $unitIconMap[unitId]);
+		if (!$unitIconMap || !unitId || !$unitIconMap[unitId]) return '';
+		// unitIconMap stores paths like "unit_icons_webp/some_icon.webp"
+		// which is already relative to the static folder if served directly or base path needs to be prepended.
+		// Since unit_icons_webp is directly in static, the path from the map should be correct with base.
+		return `${base}/${$unitIconMap[unitId]}`;
 	}
 
 	// Helper function to get the correct health value from unit data
@@ -108,7 +120,40 @@
 			}
 			displayName = $unitNamesDetails.units.names[unitName] || unitName;
 			groupedData = groupData(unitData);
+
+			// Get the raw processed unique weapon definitions
 			weaponsData = processWeapons(unitData.weapondefs || {});
+
+			// Prepare weapons for display with counts
+			if (
+				unitData &&
+				unitData.weapons &&
+				Object.keys(unitData.weapons).length > 0 &&
+				weaponsData.length > 0
+			) {
+				const weaponSlotDefs = Object.values(unitData.weapons).map((slot) => slot.def); // Keep original case from slots
+
+				weaponsForDisplay = weaponsData
+					.map((processedWeapon) => {
+						// Count occurrences of this originalDefKey in the weapon slots
+						const count = weaponSlotDefs.filter(
+							(defNameInSlot) => defNameInSlot === processedWeapon.originalDefKey
+						).length;
+						return {
+							...processedWeapon,
+							count: count > 0 ? count : 1 // If a weapon def is processed, assume at least 1 if not found in slots (should be rare)
+						};
+					})
+					.filter((weapon) => weapon.count > 0); // Only include weapons that are present
+			} else if (weaponsData.length > 0) {
+				// Fallback: if no slots defined, but unique weapon defs exist, assume count 1 for each
+				weaponsForDisplay = weaponsData.map((pw) => ({ ...pw, count: 1 }));
+			} else {
+				weaponsForDisplay = []; // No weapons at all
+			}
+
+			console.log('weaponsData for getUnitCombatStats:', weaponsData);
+			console.log('weaponsForDisplay for UI:', weaponsForDisplay);
 		}
 		loading = false;
 	}
@@ -415,12 +460,22 @@
 							</div>
 						{/if}
 						<div>
-							<div class="mb-4 flex items-center justify-between">
+							<div class="mb-2 flex items-center gap-4">
 								<h1
 									class="cursor-default bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-4xl font-bold text-transparent"
 								>
 									{displayName}
 								</h1>
+								{#if !loading && iconPath}
+									<div class="h-8 w-8 flex-shrink-0">
+										<img
+											src={iconPath}
+											alt="{displayName} icon"
+											class="max-h-full max-w-full object-contain"
+											loading="lazy"
+										/>
+									</div>
+								{/if}
 							</div>
 							<div class="flex flex-wrap gap-3">
 								<span
@@ -452,7 +507,40 @@
 										{isMineUnit(unitData) ? 'Mine' : 'Suicide Unit'}
 									</span>
 								{/if}
+								{#if unitData.customparams?.model_author}
+									<span
+										class="rounded-full bg-indigo-500/20 px-3 py-1 text-sm font-medium text-indigo-400"
+									>
+										Model by <a
+											href="https://www.beyondallreason.info/team"
+											target="_blank"
+											class="underline hover:text-indigo-300"
+											>{unitData.customparams.model_author}</a
+										>
+									</span>
+								{/if}
 							</div>
+							{#if unit.path}
+								<div class="mt-2">
+									<a
+										href={`https://github.com/beyond-all-reason/Beyond-All-Reason/blob/master/units/${unit.path.join('/')}.lua`}
+										target="_blank"
+										class="inline-flex items-center text-sm text-blue-400 hover:text-blue-300"
+									>
+										<svg
+											class="mr-1 h-4 w-4"
+											fill="currentColor"
+											viewBox="0 0 24 24"
+											xmlns="http://www.w3.org/2000/svg"
+										>
+											<path
+												d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+											/>
+										</svg>
+										View source on GitHub
+									</a>
+								</div>
+							{/if}
 						</div>
 						<a
 							href="{base}/explore"
@@ -547,49 +635,80 @@
 															<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 																{#each Object.entries(value) as [boIndex, buildableUnitId]}
 																	{@const buildableUnitInfo = $unitsData?.[buildableUnitId] || {}}
-																	{@const buildableUnitData = buildableUnitInfo?.data?.[buildableUnitId] || {}}
-																	{@const buildableUnitName = $unitNamesDetails?.units?.names?.[buildableUnitId] || buildableUnitId}
+																	{@const buildableUnitData =
+																		buildableUnitInfo?.data?.[buildableUnitId] || {}}
+																	{@const buildableUnitName =
+																		$unitNamesDetails?.units?.names?.[buildableUnitId] ||
+																		buildableUnitId}
 																	{@const buildableUnitTech = buildableUnitInfo?.tech_level || 1}
 																	{@const buildableUnitFaction = buildableUnitInfo?.faction}
 																	{@const buildableUnitType = buildableUnitInfo?.type}
 
-																	<a href="{base}/unit?name={buildableUnitId}" class="block rounded-lg bg-gray-800/70 p-3 transition-all hover:bg-gray-700/70 hover:shadow-md">
+																	<a
+																		href="{base}/unit?name={buildableUnitId}"
+																		class="block rounded-lg bg-gray-800/70 p-3 transition-all hover:bg-gray-700/70 hover:shadow-md"
+																	>
 																		<div class="flex items-center justify-between">
-																			<span class="font-semibold text-teal-400">{buildableUnitName}</span>
-																			<span class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+																			<span class="font-semibold text-teal-400"
+																				>{buildableUnitName}</span
+																			>
+																			<span
+																				class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400"
+																			>
 																				T{buildableUnitTech}
 																			</span>
 																		</div>
 																		<div class="mt-1.5 flex flex-wrap gap-1.5 text-xs">
 																			{#if buildableUnitFaction}
-																				<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300">
+																				<span
+																					class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300"
+																				>
 																					{buildableUnitFaction === 'arm' ? 'ARM' : 'COR'}
 																				</span>
 																			{/if}
 																			{#if buildableUnitType && buildableUnitType !== 'other'}
-																				<span class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-300">
+																				<span
+																					class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-300"
+																				>
 																					{buildableUnitType}
 																				</span>
 																			{/if}
 																		</div>
 																		{#if buildableUnitData && Object.keys(buildableUnitData).length > 0}
-																			<div class="mt-2 grid grid-cols-3 gap-2 border-t border-gray-700/50 pt-2 text-xs">
-																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																			<div
+																				class="mt-2 grid grid-cols-3 gap-2 border-t border-gray-700/50 pt-2 text-xs"
+																			>
+																				<div
+																					class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																				>
 																					<span class="text-gray-400">HP</span>
 																					<span class="font-medium text-red-400">
-																						{formatValueWithContext(getUnitHealth(buildableUnitData, buildableUnitId), 'maxdamage')}
+																						{formatValueWithContext(
+																							getUnitHealth(buildableUnitData, buildableUnitId),
+																							'maxdamage'
+																						)}
 																					</span>
 																				</div>
-																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																				<div
+																					class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																				>
 																					<span class="text-gray-400">Metal</span>
 																					<span class="font-medium text-blue-400">
-																						{formatValueWithContext(getUnitMetal(buildableUnitData, buildableUnitId), 'buildcostmetal')}
+																						{formatValueWithContext(
+																							getUnitMetal(buildableUnitData, buildableUnitId),
+																							'buildcostmetal'
+																						)}
 																					</span>
 																				</div>
-																				<div class="flex flex-col items-center rounded bg-gray-700/50 p-1.5">
+																				<div
+																					class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																				>
 																					<span class="text-gray-400">Time</span>
 																					<span class="font-medium text-green-400">
-																						{formatValueWithContext(buildableUnitData.buildtime, 'buildtime')}
+																						{formatValueWithContext(
+																							buildableUnitData.buildtime,
+																							'buildtime'
+																						)}
 																					</span>
 																				</div>
 																			</div>
@@ -598,10 +717,14 @@
 																{/each}
 															</div>
 														{:else}
-															<span class="text-gray-500">—</span> /* No build options or empty object */
+															<span class="text-gray-500">—</span> /* No build options or empty object
+															*/
 														{/if}
-													{:else} 
-														<div class="mt-2 space-y-1 overflow-y-auto rounded-md bg-gray-850/50 p-2" style="max-height: 250px;">
+													{:else}
+														<div
+															class="bg-gray-850/50 mt-2 space-y-1 overflow-y-auto rounded-md p-2"
+															style="max-height: 250px;"
+														>
 															<RecursiveObjectDisplay data={value} />
 														</div>
 													{/if}
@@ -672,11 +795,11 @@
 									{/if}
 								</div>
 								<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-									{#each weaponsData as weapon}
+									{#each weaponsForDisplay as weapon (weapon.originalDefKey)}
 										<div
 											class="rounded-lg border border-gray-700/30 bg-gray-800/50 p-4 transition-colors hover:bg-gray-700/50"
 										>
-											<h3 class="mb-2 font-medium text-white">{getDisplayName(weapon.type)}</h3>
+											<h3 class="mb-2 font-medium text-white">{getDisplayName(weapon.name)}</h3>
 											{#if weapon.isEMP}
 												<div
 													class="mb-2 inline-block rounded-full bg-yellow-500/20 px-3 py-1 text-xs font-medium text-yellow-400"

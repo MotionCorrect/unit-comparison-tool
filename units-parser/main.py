@@ -32,12 +32,16 @@ NAMES_DETAILS_URL = "https://raw.githubusercontent.com/beyond-all-reason/Beyond-
 BAR_REPO_URL = "https://github.com/beyond-all-reason/Beyond-All-Reason"
 UNITS_FOLDER_PATH = "units"
 UNITPICS_FOLDER_PATH = "unitpics"  # Added for unit pictures
+ICONS_FOLDER_PATH = "icons"  # Added for unit icons
+ICONTYPES_LUA_URL = "https://raw.githubusercontent.com/beyond-all-reason/Beyond-All-Reason/master/gamedata/icontypes.lua"  # Added for icon mappings
 
 # Directories
 CACHE_DIR = Path("cache")
 UNITS_DIR = CACHE_DIR / "units"
 UNITPICS_DIR = CACHE_DIR / UNITPICS_FOLDER_PATH  # Added for unit pictures
 UNITPICS_WEBP_DIR = CACHE_DIR / "unitpics_webp"  # Added for converted WebP images
+ICONS_RAW_DIR = CACHE_DIR / ICONS_FOLDER_PATH  # Added for downloaded PNG icons
+ICONS_WEBP_DIR = CACHE_DIR / "unit_icons_webp"  # Added for converted WebP icons
 STATIC_DIR = Path("..\\static")  # Added static directory for website assets
 
 # JSON files to maintain in cache initially
@@ -52,6 +56,7 @@ JSON_FILES_TO_CACHE = [
     "types_with_subtypes.json",
     "all_keywords.json",
     "all_keywords.txt",
+    "unit_icon_map.json",  # Added for icon mappings
 ]
 
 # Files and folders to move to static directory
@@ -64,8 +69,12 @@ FILES_TO_MOVE_TO_STATIC = [
     "units_by_type.json",
     "units_data.json",
     "factions_list.json",
+    "unit_icon_map.json",  # Added for icon mappings
 ]
-FOLDER_TO_MOVE_TO_STATIC = UNITPICS_WEBP_DIR.name  # Just the folder name
+FOLDERS_TO_MOVE_TO_STATIC = [
+    UNITPICS_WEBP_DIR.name,
+    ICONS_WEBP_DIR.name,
+]  # Updated to list, just folder names
 
 # =====================
 # UTILITY FUNCTIONS
@@ -78,9 +87,11 @@ def ensure_directories_exist() -> None:
     UNITS_DIR.mkdir(exist_ok=True)
     UNITPICS_DIR.mkdir(exist_ok=True)  # Ensure unitpics directory exists
     UNITPICS_WEBP_DIR.mkdir(exist_ok=True)  # Ensure unitpics_webp directory exists
+    ICONS_RAW_DIR.mkdir(exist_ok=True)  # Ensure icons_raw directory exists
+    ICONS_WEBP_DIR.mkdir(exist_ok=True)  # Ensure icons_webp directory exists
     STATIC_DIR.mkdir(exist_ok=True)  # Ensure static directory exists
     logger.info(
-        f"Cache directories created or verified: {CACHE_DIR}, {UNITS_DIR}, {UNITPICS_DIR}, {UNITPICS_WEBP_DIR}"
+        f"Cache directories created or verified: {CACHE_DIR}, {UNITS_DIR}, {UNITPICS_DIR}, {UNITPICS_WEBP_DIR}, {ICONS_RAW_DIR}, {ICONS_WEBP_DIR}"
     )
     logger.info(f"Static directory for website created or verified: {STATIC_DIR}")
 
@@ -226,6 +237,59 @@ def convert_dds_to_webp(source_dir: Path, target_dir: Path) -> None:
 
     logger.info(
         f"DDS to WebP conversion complete. Converted: {dds_files_converted}, Failed: {dds_files_failed}"
+    )
+
+
+def convert_png_to_webp(source_dir: Path, target_dir: Path) -> None:
+    """
+    Converts all PNG images in source_dir (and its subdirectories) to WebP format
+    and saves them in target_dir, maintaining the folder structure.
+    """
+    logger.info(f"Scanning for PNG files in {source_dir}...")
+    png_file_paths = list(source_dir.rglob("*.png"))
+
+    if not png_file_paths:
+        logger.info(f"No PNG files found in {source_dir}.")
+        return
+
+    logger.info(
+        f"Found {len(png_file_paths)} PNG files. Starting conversion to WebP in {target_dir}."
+    )
+    png_files_converted = 0
+    png_files_failed = 0
+
+    for png_file_path in tqdm(
+        png_file_paths, desc="Converting PNG to WebP", unit="file"
+    ):
+        try:
+            # Create corresponding subdirectory structure in target_dir
+            relative_path = png_file_path.relative_to(source_dir)
+            webp_file_dir = target_dir / relative_path.parent
+            webp_file_dir.mkdir(parents=True, exist_ok=True)
+
+            # Define WebP filename
+            webp_file_name = relative_path.stem + ".webp"
+            webp_file_path = webp_file_dir / webp_file_name
+
+            # Open PNG and save as WebP
+            with Image.open(png_file_path) as img:
+                # Ensure image is in RGBA format before saving to WebP to handle transparency
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                img.save(webp_file_path, "WEBP", quality=80)  # quality can be adjusted
+            logger.debug(f"Successfully converted: {png_file_path} -> {webp_file_path}")
+            png_files_converted += 1
+        except UnidentifiedImageError:
+            logger.error(
+                f"Failed to identify (or unsupported PNG format) {png_file_path}. Skipping."
+            )
+            png_files_failed += 1
+        except Exception as e:
+            logger.error(f"Failed to convert {png_file_path}: {e}")
+            png_files_failed += 1
+
+    logger.info(
+        f"PNG to WebP conversion complete. Converted: {png_files_converted}, Failed: {png_files_failed}"
     )
 
 
@@ -383,24 +447,24 @@ def analyze_unit_data_structure(units_data: Dict) -> Dict[str, List[str]]:
 
         # Analyze data level fields
         if "data" in unit and unit_name in unit["data"]:
-            unit_data = unit["data"][unit_name]
+            unit_data_val = unit["data"][unit_name]  # Renamed to avoid conflict
 
-            if type(unit_data) is not dict:
+            if type(unit_data_val) is not dict:
                 continue
 
-            structure["data_level"].update(unit_data.keys())
+            structure["data_level"].update(unit_data_val.keys())
 
             # Analyze customparams
-            if "customparams" in unit_data:
-                structure["customparams"].update(unit_data["customparams"].keys())
+            if "customparams" in unit_data_val:
+                structure["customparams"].update(unit_data_val["customparams"].keys())
 
             # Analyze sfxtypes
-            if "sfxtypes" in unit_data:
-                structure["sfxtypes"].update(unit_data["sfxtypes"].keys())
+            if "sfxtypes" in unit_data_val:
+                structure["sfxtypes"].update(unit_data_val["sfxtypes"].keys())
 
             # Analyze sounds
-            if "sounds" in unit_data:
-                structure["sounds"].update(unit_data["sounds"].keys())
+            if "sounds" in unit_data_val:
+                structure["sounds"].update(unit_data_val["sounds"].keys())
 
     # Convert sets to sorted lists for better readability
     return {k: sorted(str(x) for x in v) for k, v in structure.items()}
@@ -421,36 +485,40 @@ def extract_all_keywords(units_data: Dict) -> List[str]:
 
         # Extract unit data
         if unit_name in unit["data"]:
-            unit_data = unit["data"][unit_name]
+            unit_data_val = unit["data"][unit_name]  # Renamed to avoid conflict
 
-            if type(unit_data) is not dict:
+            if type(unit_data_val) is not dict:
                 continue
 
             # Add all top-level keys
-            all_keywords.update(str(key) for key in unit_data.keys())
+            all_keywords.update(str(key) for key in unit_data_val.keys())
 
             # Add all customparams keys
-            if "customparams" in unit_data and isinstance(
-                unit_data["customparams"], dict
+            if "customparams" in unit_data_val and isinstance(
+                unit_data_val["customparams"], dict
             ):
                 all_keywords.update(
-                    str(key) for key in unit_data["customparams"].keys()
+                    str(key) for key in unit_data_val["customparams"].keys()
                 )
 
             # Add weapon keys
-            if "weapons" in unit_data and isinstance(unit_data["weapons"], dict):
-                for weapon_key, weapon_data in unit_data["weapons"].items():
+            if "weapons" in unit_data_val and isinstance(
+                unit_data_val["weapons"], dict
+            ):
+                for weapon_key, weapon_data in unit_data_val["weapons"].items():
                     if isinstance(weapon_data, dict):
                         all_keywords.update(str(key) for key in weapon_data.keys())
 
             # Add weapondefs keys if available
-            if "weapondefs" in unit_data and isinstance(unit_data["weapondefs"], dict):
-                for weapon_key, weapon_data in unit_data["weapondefs"].items():
+            if "weapondefs" in unit_data_val and isinstance(
+                unit_data_val["weapondefs"], dict
+            ):
+                for weapon_key, weapon_data in unit_data_val["weapondefs"].items():
                     if isinstance(weapon_data, dict):
                         all_keywords.update(str(key) for key in weapon_data.keys())
 
             # Check for any additional nested dictionaries that might contain stats
-            for key, value in unit_data.items():
+            for key, value in unit_data_val.items():
                 if isinstance(value, dict):
                     all_keywords.update(str(k) for k in value.keys())
 
@@ -515,8 +583,7 @@ def generate_llm_prompt(keywords: List[str]) -> Path:
         '  "dps": "DPS",',
         '  "seismicsignature": "Seismic Signature",',
         '  "buildcostenergy": "Energy Cost",',
-        '  "buildcostmetal": "Metal Cost"',
-        "};",
+        '  "buildcostmetal": "Metal Cost"' "};",
         "```",
         "",
         "## Keywords to format:",
@@ -560,9 +627,61 @@ def save_keywords_to_files(keywords: List[str]) -> None:
     logger.info(f"All unique keywords (plain text) saved to: {keywords_txt_path}")
 
 
+def parse_icontypes_lua(file_path: Path) -> Optional[Dict[str, str]]:
+    """Parse icontypes.lua to extract unit icon mappings."""
+    logger.info(f"Parsing icon types Lua file: {file_path}")
+    icon_map = {}
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            lua_content = f.read()
+
+        # Preprocess to make it valid for slpp (remove 'local icontypes = ' and trailing comma if any)
+        # More robust: find the first '{' and the last '}'
+        start_index = lua_content.find("{")
+        end_index = lua_content.rfind("}")
+        if start_index == -1 or end_index == -1:
+            logger.error(f"Could not find table content in {file_path}")
+            return None
+
+        lua_table_content = lua_content[start_index : end_index + 1]
+
+        parsed_data = slpp.decode(lua_table_content)
+
+        for unit_name, data in parsed_data.items():
+            if isinstance(data, dict) and "bitmap" in data:
+                original_bitmap_path = data["bitmap"]  # e.g., "icons/some_icon.png"
+                # Transform to new webp path, e.g., "unit_icons_webp/some_icon.webp"
+                if original_bitmap_path.startswith("icons/"):
+                    webp_filename = Path(original_bitmap_path).stem + ".webp"
+                    # Correctly join parts for the new path
+                    new_path_parts = (
+                        [ICONS_WEBP_DIR.name]
+                        + list(Path(original_bitmap_path).parent.parts[1:])
+                        + [webp_filename]
+                    )
+                    icon_map[unit_name] = "/".join(new_path_parts)
+                else:
+                    logger.warning(
+                        f"Unexpected bitmap path format for {unit_name}: {original_bitmap_path}"
+                    )
+            else:
+                logger.warning(
+                    f"Skipping entry for {unit_name} due to missing bitmap or incorrect format: {data}"
+                )
+
+        logger.info(
+            f"Successfully parsed {len(icon_map)} icon mappings from: {file_path}"
+        )
+        return icon_map
+    except Exception as e:
+        logger.error(f"Failed to parse {file_path}: {e}")
+        return None
+
+
 def save_results_to_json_files() -> None:
     """Save all the collected data to their respective JSON files in the cache."""
     global factions_list, types_with_subtypes
+    global unit_icon_map  # Added global for unit_icon_map
     factions_list_sorted = sorted(list(factions_list))
     types_with_subtypes_sorted = {
         type_name: sorted(list(subtypes))
@@ -579,15 +698,16 @@ def save_results_to_json_files() -> None:
         "units_by_faction_type_tech.json": units_by_faction_type_tech,
         "factions_list.json": factions_list_sorted,
         "types_with_subtypes.json": types_with_subtypes_sorted,
+        "unit_icon_map.json": unit_icon_map,  # Added unit_icon_map
     }
 
-    for filename, data in file_data_map.items():
+    for filename, data_to_save in file_data_map.items():  # Renamed data to data_to_save
         if (
             filename in JSON_FILES_TO_CACHE
         ):  # Ensure we only save files meant for caching initially
             path = CACHE_DIR / filename
             with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
+                json.dump(data_to_save, f, indent=4)
             logger.info(f"Data for {filename} saved to cache: {path}")
 
 
@@ -629,13 +749,15 @@ def print_structure_summary(structure):
 
 
 def move_generated_files_to_static(
-    files_to_copy: List[str], folder_to_copy_name: str
+    files_to_copy: List[str], folders_to_copy_names: List[str]
 ) -> None:
-    """Deletes specified files and a folder from the static directory if they exist,
+    """Deletes specified files and folders from the static directory if they exist,
     then copies them from the cache to the static directory."""
-    logger.info(f"Refreshing files in static directory: {STATIC_DIR} from cache.")
+    logger.info(
+        f"Refreshing files and folders in static directory: {STATIC_DIR} from cache."
+    )
     copied_files_count = 0
-    copied_folder = False
+    copied_folders_count = 0
 
     # Delete existing individual JSON files from static directory
     for filename in files_to_copy:
@@ -645,16 +767,23 @@ def move_generated_files_to_static(
                 destination_path.unlink()
                 logger.info(f"Deleted existing file from static: {destination_path}")
             except Exception as e:
-                logger.error(f"Failed to delete existing file {destination_path} from static: {e}")
+                logger.error(
+                    f"Failed to delete existing file {destination_path} from static: {e}"
+                )
 
-    # Delete existing unitpics_webp folder from static directory
-    destination_folder_path = STATIC_DIR / folder_to_copy_name
-    if destination_folder_path.exists() and destination_folder_path.is_dir():
-        try:
-            shutil.rmtree(destination_folder_path)
-            logger.info(f"Deleted existing folder from static: {destination_folder_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete existing folder {destination_folder_path} from static: {e}")
+    # Delete existing specified folders from static directory
+    for folder_name in folders_to_copy_names:
+        destination_folder_path = STATIC_DIR / folder_name
+        if destination_folder_path.exists() and destination_folder_path.is_dir():
+            try:
+                shutil.rmtree(destination_folder_path)
+                logger.info(
+                    f"Deleted existing folder from static: {destination_folder_path}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to delete existing folder {destination_folder_path} from static: {e}"
+                )
 
     # Copy individual JSON files from cache to static
     for filename in files_to_copy:
@@ -672,27 +801,30 @@ def move_generated_files_to_static(
                 f"Failed to copy file {source_path} to {destination_path}: {e}"
             )
 
-    # Copy the unitpics_webp folder from cache to static
-    source_folder_path = CACHE_DIR / folder_to_copy_name
-    # Destination path is simply STATIC_DIR, copytree will create the folder_to_copy_name inside it.
-    # However, to match the previous shutil.move behavior where the target is the folder itself:
-    final_destination_folder_path = STATIC_DIR / folder_to_copy_name
-    try:
-        if source_folder_path.exists() and source_folder_path.is_dir():
-            shutil.copytree(str(source_folder_path), str(final_destination_folder_path))
-            logger.info(f"Copied folder: {source_folder_path} -> {final_destination_folder_path}")
-            copied_folder = True
-        else:
-            logger.warning(
-                f"Folder not found in cache or is not a directory, cannot copy: {source_folder_path}"
+    # Copy the specified folders from cache to static
+    for folder_name in folders_to_copy_names:
+        source_folder_path = CACHE_DIR / folder_name
+        final_destination_folder_path = STATIC_DIR / folder_name
+        try:
+            if source_folder_path.exists() and source_folder_path.is_dir():
+                shutil.copytree(
+                    str(source_folder_path), str(final_destination_folder_path)
+                )
+                logger.info(
+                    f"Copied folder: {source_folder_path} -> {final_destination_folder_path}"
+                )
+                copied_folders_count += 1
+            else:
+                logger.warning(
+                    f"Folder not found in cache or is not a directory, cannot copy: {source_folder_path}"
+                )
+        except Exception as e:
+            logger.error(
+                f"Failed to copy folder {source_folder_path} to {final_destination_folder_path}: {e}"
             )
-    except Exception as e:
-        logger.error(
-            f"Failed to copy folder {source_folder_path} to {final_destination_folder_path}: {e}"
-        )
 
     logger.info(
-        f"File copying to static directory complete. Files copied: {copied_files_count}. Folder copied: {copied_folder}"
+        f"File and folder copying to static directory complete. Files copied: {copied_files_count}. Folders copied: {copied_folders_count}"
     )
 
 
@@ -704,6 +836,7 @@ def move_generated_files_to_static(
 def main():
     global units_data, unit_names_details, units_by_faction, units_by_type
     global units_by_tech, units_by_faction_type_tech, factions_list, types_with_subtypes
+    global unit_icon_map  # Added global for unit_icon_map
 
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
@@ -737,6 +870,7 @@ def main():
     units_by_faction_type_tech = {}
     factions_list = set()
     types_with_subtypes = {}
+    unit_icon_map = {}  # Initialize unit_icon_map
 
     # Step 1: Ensure directories exist and clean files if needed
     ensure_directories_exist()
@@ -756,20 +890,37 @@ def main():
         download_file(
             NAMES_DETAILS_URL, names_details_path
         )  # Download to temporary name
-        # Rename or load and save to unit_names_details.json as per existing logic
-        # The current script loads units.json into unit_names_details variable and then saves it.
-        # Ensure this logic correctly saves it as unit_names_details.json in CACHE_DIR for moving later.
-        # For simplicity, assuming current logic saves it as unit_names_details.json
-        # If it saves as units.json, that needs to be in FILES_TO_MOVE_TO_STATIC with the correct name.
     else:
         logger.info(
             f"Using cached unit names details from: {CACHE_DIR / 'unit_names_details.json'}"
         )
 
+    # Step 2b: Download icontypes.lua for icon mapping
+    icontypes_lua_path = CACHE_DIR / "icontypes.lua"
+    if args.update_files or not icontypes_lua_path.exists():
+        download_file(ICONTYPES_LUA_URL, icontypes_lua_path)
+    else:
+        logger.info(f"Using cached icontypes.lua from: {icontypes_lua_path}")
+
+    # Initialize downloader early if needed for multiple downloads
+    if (
+        args.update_files
+        or not UNITS_DIR.exists()
+        or not any(UNITS_DIR.iterdir())
+        or not UNITPICS_DIR.exists()
+        or not any(UNITPICS_DIR.iterdir())
+        or not ICONS_RAW_DIR.exists()
+        or not any(ICONS_RAW_DIR.iterdir())
+    ):
+        downloader = Downloader(BAR_REPO_URL, "master")
+
     # Step 3: Download the units folder
     if args.update_files or not UNITS_DIR.exists() or not any(UNITS_DIR.iterdir()):
         logger.info(f"Downloading units folder from {BAR_REPO_URL}")
-        downloader = Downloader(BAR_REPO_URL, "master")
+        if "downloader" not in locals():
+            downloader = Downloader(
+                BAR_REPO_URL, "master"
+            )  # Ensure downloader is initialized
         downloader.download(CACHE_DIR, UNITS_FOLDER_PATH, True)
         logger.info(f"Units folder downloaded to: {UNITS_DIR}")
     else:
@@ -782,6 +933,8 @@ def main():
         or not any(UNITPICS_DIR.iterdir())
     ):
         logger.info(f"Downloading unitpics folder from {BAR_REPO_URL}")
+        if "downloader" not in locals():
+            downloader = Downloader(BAR_REPO_URL, "master")
         downloader.download(CACHE_DIR, UNITPICS_FOLDER_PATH, True)
         logger.info(f"Unitpics folder downloaded to: {UNITPICS_DIR}")
         # Convert DDS images immediately after download if updating/downloading fresh
@@ -800,10 +953,33 @@ def main():
         else:
             logger.info(f"Using cached WebP images from: {UNITPICS_WEBP_DIR}")
 
+    # Step 3c: Download the icons folder
+    if (
+        args.update_files
+        or not ICONS_RAW_DIR.exists()
+        or not any(ICONS_RAW_DIR.iterdir())
+    ):
+        logger.info(f"Downloading icons folder from {BAR_REPO_URL}")
+        if "downloader" not in locals():
+            downloader = Downloader(BAR_REPO_URL, "master")
+        downloader.download(CACHE_DIR, ICONS_FOLDER_PATH, True)
+        logger.info(f"Icons folder downloaded to: {ICONS_RAW_DIR}")
+        # Convert PNG icons immediately after download
+        logger.info(
+            f"Converting PNG images in {ICONS_RAW_DIR} to WebP format in {ICONS_WEBP_DIR}"
+        )
+        convert_png_to_webp(ICONS_RAW_DIR, ICONS_WEBP_DIR)
+    else:
+        logger.info(f"Using cached icons folder: {ICONS_RAW_DIR}")
+        if not ICONS_WEBP_DIR.exists() or not any(ICONS_WEBP_DIR.iterdir()):
+            logger.info(
+                f"Cached icons found, but WebP directory for icons is empty or missing. Converting now."
+            )
+            convert_png_to_webp(ICONS_RAW_DIR, ICONS_WEBP_DIR)
+        else:
+            logger.info(f"Using cached WebP icons from: {ICONS_WEBP_DIR}")
+
     # Step 4: Load names and details JSON
-    # Ensure unit_names_details.json exists in CACHE_DIR before this step if not downloaded fresh
-    # The current names_details_path is 'units.json', but the data is loaded into unit_names_details.
-    # The save_results_to_json_files function saves it as 'unit_names_details.json'.
     if (CACHE_DIR / "unit_names_details.json").exists():
         with open(CACHE_DIR / "unit_names_details.json", "r", encoding="utf-8") as f:
             unit_names_details = json.load(f)
@@ -815,13 +991,23 @@ def main():
     ):  # Fallback if it was just downloaded as units.json
         with open(names_details_path, "r", encoding="utf-8") as f:
             unit_names_details = json.load(f)
-        # Ensure it gets saved as unit_names_details.json by save_results_to_json_files
         logger.info(
             f"Loaded unit names and details from temporary download: {names_details_path}"
         )
+        # This data will be saved as unit_names_details.json by save_results_to_json_files
     else:
         logger.error("Unit names details JSON not found after download/cache check.")
         # Handle error or exit
+
+    # Step 4b: Parse icontypes.lua
+    if icontypes_lua_path.exists():
+        unit_icon_map = parse_icontypes_lua(icontypes_lua_path)
+        if not unit_icon_map:  # If parsing failed, unit_icon_map might be None or empty
+            unit_icon_map = {}  # Ensure it's a dict for save_results_to_json_files
+            logger.warning("Failed to parse icontypes.lua, icon map will be empty.")
+    else:
+        logger.error("icontypes.lua not found, cannot create icon map.")
+        unit_icon_map = {}  # Ensure it's a dict
 
     # Step 5: Parse units folder
     print("\n" + "=" * 60)
@@ -858,12 +1044,15 @@ def main():
     print("\n" + "=" * 60)
     print(" DATA PROCESSING AND IMAGE CONVERSION COMPLETE ")
     if UNITPICS_WEBP_DIR.exists():
-        print(f"WebP images generated in: {UNITPICS_WEBP_DIR}")
+        print(f"WebP unit pictures generated in: {UNITPICS_WEBP_DIR}")
+    if ICONS_WEBP_DIR.exists():
+        print(f"WebP unit icons generated in: {ICONS_WEBP_DIR}")
+    print(f"Unit icon map generated: {CACHE_DIR / 'unit_icon_map.json'}")
     print(f"LLM prompt saved to: {CACHE_DIR / 'llm_prompt.txt'}")
     print("=" * 60)
 
     # Step 11: Move necessary files to src/static
-    move_generated_files_to_static(FILES_TO_MOVE_TO_STATIC, FOLDER_TO_MOVE_TO_STATIC)
+    move_generated_files_to_static(FILES_TO_MOVE_TO_STATIC, FOLDERS_TO_MOVE_TO_STATIC)
 
     print("\n" + "=" * 60)
     print(" SCRIPT COMPLETE ")

@@ -4,14 +4,14 @@
 	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte'; // Import the recursive display component
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { loadData, unitsData, unitNamesDetails } from '$lib/data';
+	import { loadData, unitsData, unitNamesDetails, unitIconMap } from '$lib/data';
 	import { base } from '$app/paths';
 	import {
-			processWeapons,
-			getUnitCombatStats,
-			isSuicideUnit,
-			isMineUnit
-		} from '$lib/dpsCalculations';
+		processWeapons,
+		getUnitCombatStats,
+		isSuicideUnit,
+		isMineUnit
+	} from '$lib/dpsCalculations';
 	import { getDisplayName, formatValueWithContext } from '$lib/propertyDisplay';
 	// View mode state
 	let viewMode = 'browse'; // 'compare' or 'browse'
@@ -27,7 +27,7 @@
 		{ id: 'sightDistance', name: 'Sight Range', visible: true },
 		{ id: 'maxRange', name: 'Weapon Range', visible: true },
 		{ id: 'dps', name: 'DPS', visible: true },
-		{ id: 'armor_type', name: 'Armor', visible: true }
+		{ id: 'buildcostmetal', name: 'Metal Cost', visible: true } // Added metal cost column example
 	];
 
 	// Browsing filters
@@ -67,7 +67,6 @@
 		'health',
 		'maxdamage',
 		'damagemodifier',
-		'armorType',
 		'seismicdistance',
 		'seismicsignature',
 		'hidedamage',
@@ -151,7 +150,10 @@
 		'noautofire',
 		'nochase',
 		'nochasecategory',
-		'turret'
+		'turret',
+		// Calculated combat stats (added explicitly for clarity)
+		'maxRange',
+		'dps'
 	];
 
 	// Resource-related properties
@@ -185,7 +187,7 @@
 				...statsProperties.map((prop) => ({
 					id: prop,
 					name: getDisplayName(prop),
-					type: 'number'
+					type: 'number' // Assuming most stats are numeric for filtering
 				}))
 			]
 		},
@@ -195,7 +197,18 @@
 				...combatProperties.map((prop) => ({
 					id: prop,
 					name: getDisplayName(prop),
-					type: 'number'
+					type: [
+						'maxRange',
+						'dps',
+						'sightdistance',
+						'airsightdistance',
+						'radardistance',
+						'sonardistance',
+						'cloakcost',
+						'cloakcostmoving'
+					].includes(prop)
+						? 'number'
+						: 'other' // Specify numeric combat props
 				}))
 			]
 		},
@@ -205,7 +218,7 @@
 				...movementProperties.map((prop) => ({
 					id: prop,
 					name: getDisplayName(prop),
-					type: 'number'
+					type: 'number' // Assuming most movement props are numeric
 				}))
 			]
 		},
@@ -215,7 +228,7 @@
 				...resourceProperties.map((prop) => ({
 					id: prop,
 					name: getDisplayName(prop),
-					type: 'number'
+					type: 'number' // Assuming resource props are numeric
 				}))
 			]
 		}
@@ -236,17 +249,18 @@
 		if (typeof value === 'boolean') return value ? 'Yes' : 'No';
 		if (typeof value === 'number') {
 			if (key === 'buildtime') return formatTime(value / 100);
-			if (key.toLowerCase().includes('time')) return formatTime(value);
-			return value.toLocaleString();
+			// No longer needed here, handled by formatValueWithContext
+			// if (key.toLowerCase().includes('time')) return formatTime(value);
+			return value.toLocaleString(); // Default number formatting
 		}
 		return value;
 	}
 
 	function formatTime(seconds) {
-		if (seconds < 60) return `${seconds}s`;
+		if (seconds < 60) return `${seconds.toFixed(1)}s`; // Show decimals for short times
 		const minutes = Math.floor(seconds / 60);
 		const remainingSeconds = seconds % 60;
-		return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+		return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds.toFixed(0)}s` : `${minutes}m`;
 	}
 
 	// Get comparable properties
@@ -263,15 +277,27 @@
 		// Helper to count non-empty values for a property
 		const getValueCount = (prop) => {
 			return selectedUnitsData.reduce((count, unit) => {
-				return count + (unit?.data?.[prop] !== undefined ? 1 : 0);
+				// Check the prepared selectedUnitsData which should have typed props
+				return count + (unit?.[prop] !== undefined && unit?.[prop] !== null ? 1 : 0);
 			}, 0);
 		};
 
 		// Sort properties by value presence
 		const sortByValuePresence = (props) => {
-			return [...props].sort((a, b) => getValueCount(b) - getValueCount(a));
+			// Filter out properties that shouldn't be shown directly (like raw data)
+			const relevantProps = props.filter(
+				(p) =>
+					p !== 'data' &&
+					p !== 'id' &&
+					p !== 'isSuicideUnit' &&
+					p !== 'isMineUnit' &&
+					p !== 'weapons' &&
+					p !== 'combatStats'
+			);
+			return [...relevantProps].sort((a, b) => getValueCount(b) - getValueCount(a));
 		};
 
+		// Use the prepared selectedUnitsData for sorting property relevance
 		return {
 			general: sortByValuePresence(
 				allProperties.filter((prop) => generalProperties.includes(prop))
@@ -284,13 +310,22 @@
 			resources: sortByValuePresence(
 				allProperties.filter((prop) => resourceProperties.includes(prop))
 			),
-			custom: allProperties.filter(
-				(prop) =>
-					!generalProperties.includes(prop) &&
-					!statsProperties.includes(prop) &&
-					!movementProperties.includes(prop) &&
-					!combatProperties.includes(prop) &&
-					!resourceProperties.includes(prop)
+			custom: sortByValuePresence(
+				allProperties.filter(
+					(prop) =>
+						!generalProperties.includes(prop) &&
+						!statsProperties.includes(prop) &&
+						!movementProperties.includes(prop) &&
+						!combatProperties.includes(prop) &&
+						!resourceProperties.includes(prop) &&
+						// Exclude fields already handled or internal
+						prop !== 'data' &&
+						prop !== 'id' &&
+						prop !== 'isSuicideUnit' &&
+						prop !== 'isMineUnit' &&
+						prop !== 'weapons' &&
+						prop !== 'combatStats'
+				)
 			)
 		};
 	}
@@ -319,7 +354,7 @@
 				}))
 				.filter((unit) => unit.type && unit.type !== 'other')
 				.sort((a, b) => a.name.localeCompare(b.name));
-			unitsDataLoaded = true;
+			unitsDataLoaded = true; // Set flag when initial lists are ready
 		}
 	});
 
@@ -343,18 +378,28 @@
 		const weapons = processWeapons(unitData?.weapondefs);
 		const combatStats = getUnitCombatStats(weapons, unitData, id);
 
+		// Prepare data with correct types for comparison view
 		return {
 			id,
 			name: $unitNamesDetails?.units?.names?.[id] || id,
-			data: unitData, // unitData here contains buildpic if it exists in the source
+			data: unitData, // Keep raw data for image path, build options etc.
 			faction: unitInfo?.faction,
 			type: unitInfo?.type,
 			subtype: unitInfo?.subtype,
-			weapons: weapons,
-			combatStats: combatStats,
+			weapons: weapons, // Keep processed weapons
+			combatStats: combatStats, // Keep processed combat stats
 			tech: unitInfo?.tech_level,
 			isSuicideUnit: isSuicideUnit(unitData),
-			isMineUnit: isMineUnit(unitData)
+			isMineUnit: isMineUnit(unitData),
+			// Add main comparable stats as numbers explicitly
+			health: Number(getUnitHealth(unitData, id)), // Use helper function here
+			buildcostmetal: Number(getUnitMetal(unitData, id)),
+			buildcostenergy: Number(unitData?.buildcostenergy || 0),
+			buildtime: Number(unitData?.buildtime || 0),
+			dps: Number(combatStats?.totalDps || 0),
+			maxRange: Number(combatStats?.maxRange || 0),
+			sightdistance: Number(unitData?.sightdistance || 0)
+			// Add other commonly compared numeric fields here
 		};
 	});
 
@@ -387,8 +432,52 @@
 		return icons[category] || icons.custom;
 	}
 
+	// Helper function to get unit metal cost value
+	function getUnitMetal(uData, uId) {
+		const paths = [
+			uData?.buildcostmetal,
+			uData?.[uId]?.buildcostmetal,
+			uData?.cost?.metal,
+			uData?.[uId]?.cost?.metal,
+			uData?.metalcost,
+			uData?.[uId]?.metalcost,
+			uData?.customparams?.buildcostmetal,
+			uData?.[uId]?.customparams?.buildcostmetal,
+			// Check one level deeper
+			uData?.data?.[uId]?.buildcostmetal,
+			uData?.data?.[uId]?.cost?.metal,
+			uData?.data?.[uId]?.metalcost,
+			uData?.data?.[uId]?.customparams?.buildcostmetal,
+			// Check against global $unitsData
+			$unitsData?.[uId]?.data?.[uId]?.buildcostmetal,
+			$unitsData?.[uId]?.data?.[uId]?.cost?.metal,
+			$unitsData?.[uId]?.data?.[uId]?.metalcost,
+			$unitsData?.[uId]?.data?.[uId]?.customparams?.buildcostmetal
+		];
+		return paths.find((value) => value !== undefined && value !== null) || 0;
+	}
+
+	// Copied Helper function to get the correct health value from unit data (matching unit page)
+	function getUnitHealth(uData, uId) {
+		// Try all possible paths to find health
+		const paths = [
+			uData?.maxdamage,
+			uData?.health,
+			uData?.[uId]?.maxdamage,
+			uData?.[uId]?.health,
+			// Check one level deeper for nested structures if the primary unit's data is passed directly
+			uData?.data?.[uId]?.maxdamage,
+			uData?.data?.[uId]?.health,
+			// Check against global $unitsData as a fallback for buildable units
+			$unitsData?.[uId]?.data?.[uId]?.maxdamage,
+			$unitsData?.[uId]?.data?.[uId]?.health
+		];
+		return paths.find((value) => value !== undefined) || 0;
+	}
+
 	function getFilteredAndSortedUnits() {
-		if (!$unitsData) return [];
+		// Ensure base data is loaded before proceeding
+		if (!unitsDataLoaded || !$unitsData || !$unitNamesDetails) return [];
 
 		let units = Object.entries($unitsData)
 			.filter(([_, unitInfo]) => unitInfo.type && unitInfo.type !== 'other')
@@ -397,6 +486,16 @@
 				const weapons = processWeapons(unitDataForStats?.weapondefs);
 				const combatStats = getUnitCombatStats(weapons, unitDataForStats, id);
 
+				// Explicitly ensure numeric types for sortable columns
+				const health = Number(getUnitHealth(unitDataForStats, id)); // Use helper for health
+				const metalCost = Number(getUnitMetal(unitDataForStats, id)); // Use helper
+				const energyCost = Number(unitDataForStats?.buildcostenergy || 0);
+				const buildTime = Number(unitDataForStats?.buildtime || 0);
+				const sightDistance = Number(unitDataForStats?.sightdistance || 0);
+				const maxRange = Number(combatStats?.maxRange || 0);
+				const dps = Number(combatStats?.totalDps || 0);
+				// Add any other numeric fields you might sort by here...
+
 				return {
 					id,
 					name: $unitNamesDetails.units.names[id] || id,
@@ -404,31 +503,48 @@
 					subtype: unitInfo.subtype,
 					tech: unitInfo.tech_level,
 					faction: unitInfo.faction,
-					health: unitDataForStats?.maxdamage || 0,
-					sightDistance: unitDataForStats?.sightdistance || 0,
-					maxRange: Number(combatStats?.maxRange || 0),
-					dps: Number(combatStats?.totalDps || 0),
+					// Assign the explicitly typed numbers
+					health,
+					sightDistance,
+					maxRange,
+					dps,
+					buildcostmetal: metalCost, // Use the numeric metalCost
+					buildcostenergy: energyCost, // Use the numeric energyCost
+					buildtime: buildTime, // Use the numeric buildTime
+
 					isSuicideUnit: isSuicideUnit(unitDataForStats),
 					isMineUnit: isMineUnit(unitDataForStats),
-						armor: unitDataForStats?.armor || 0,
-					// Make sure 'data' contains the buildpic field needed by getUnitImagePath
-					data: unitDataForStats,
-					// Add all other properties needed for customFilters
+					data: unitDataForStats, // Keep raw data if needed elsewhere (e.g., image path)
+
+					// Spread remaining non-numeric/non-critical fields
+					// Filter out keys already handled to avoid overwriting with potentially incorrect types
 					...Object.fromEntries(
-						Object.entries(unitDataForStats || {}).map(([key, value]) => [
-							key,
-							typeof value === 'object' ? JSON.stringify(value) : value
-						])
+						Object.entries(unitDataForStats || {})
+							.filter(
+								([key]) =>
+									![
+										'maxdamage',
+										'health',
+										'buildcostmetal',
+										'buildcostenergy',
+										'buildtime',
+										'sightdistance',
+										'weapondefs', // List fields handled above
+										'dps',
+										'maxRange' // Also exclude derived combat stats if they exist as raw keys
+									].includes(key)
+							)
+							.map(([key, value]) => [
+								key,
+								typeof value === 'object' ? JSON.stringify(value) : value
+							])
 					)
 				};
 			});
-			// ... (filters logic remains here) ...
 
 		// Apply filters
 		if (searchQuery) {
-			units = units.filter((unit) =>
-				unit.name.toLowerCase().includes(searchQuery.toLowerCase())
-			);
+			units = units.filter((unit) => unit.name.toLowerCase().includes(searchQuery.toLowerCase()));
 		}
 		if (selectedTech !== 'all') {
 			units = units.filter((unit) => unit.tech === parseInt(selectedTech));
@@ -447,9 +563,12 @@
 		customFilters.forEach((filter) => {
 			if (filter.field && filter.value !== '') {
 				units = units.filter((unit) => {
-					const unitValue = parseFloat(unit[filter.field]);
+					// Use the already typed numeric value from the mapped unit object
+					const unitValue = unit[filter.field];
 					const filterValue = parseFloat(filter.value);
-					if (isNaN(unitValue) || isNaN(filterValue)) return false; // Skip if not comparable numbers
+
+					// Check if unitValue is actually a number before comparing
+					if (typeof unitValue !== 'number' || isNaN(unitValue) || isNaN(filterValue)) return false;
 
 					if (filter.operator === '>') return unitValue > filterValue;
 					if (filter.operator === '<') return unitValue < filterValue;
@@ -458,25 +577,29 @@
 				});
 			}
 		});
-		
-		// Apply sorting
+
+		// Apply sorting with smarter comparison
 		return units.sort((a, b) => {
 			const valA = a[sortBy];
 			const valB = b[sortBy];
 
 			let comparison = 0;
 
-			const numA = Number(valA);
-			const numB = Number(valB);
+			// Attempt to parse both values as floats
+			const numA = parseFloat(valA);
+			const numB = parseFloat(valB);
 
+			// Check if both are valid numbers
 			if (!isNaN(numA) && !isNaN(numB)) {
+				// Both are numbers, compare numerically
 				comparison = numA - numB;
-			} else if (typeof valA === 'string' && typeof valB === 'string') {
-				comparison = valA.localeCompare(valB);
 			} else {
-				// Fallback for mixed types or other types
-				comparison = String(valA).localeCompare(String(valB));
+				// At least one is not a number, compare as strings
+				const strA = String(valA ?? ''); // Ensure string conversion, handle null/undefined
+				const strB = String(valB ?? '');
+				comparison = strA.localeCompare(strB);
 			}
+
 			return sortOrder === 'asc' ? comparison : -comparison;
 		});
 	}
@@ -506,12 +629,23 @@
 	function handleColumnSort(column) {
 		// Use the column.id directly since it matches the data field names
 		const sortField = column.id === 'unit' ? 'name' : column.id;
-		console.log('Sorting by:', column, sortField); // Debug
+		// console.log('Sorting by:', column, sortField); // Debug
 		if (sortBy === sortField) {
 			sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
 			sortBy = sortField;
-			sortOrder = 'asc';
+			// Default sort order based on column type (example)
+			const numericColumns = [
+				'health',
+				'sightDistance',
+				'maxRange',
+				'dps',
+				'buildcostmetal',
+				'buildcostenergy',
+				'buildtime',
+				'tech'
+			];
+			sortOrder = numericColumns.includes(sortField) ? 'desc' : 'asc'; // Default numeric descending, others ascending
 		}
 	}
 
@@ -527,6 +661,18 @@
 				}
 			}
 		});
+		// Ensure the buildcostmetal column exists if added via custom filter
+		if (
+			customFilters.some((f) => f.field === 'buildcostmetal') &&
+			!columns.some((c) => c.id === 'buildcostmetal')
+		) {
+			const metalField = availableFields
+				.flatMap((cat) => cat.fields)
+				.find((f) => f.id === 'buildcostmetal');
+			if (metalField) {
+				columns = [...columns, { id: metalField.id, name: metalField.name, visible: true }];
+			}
+		}
 	}
 
 	// Add column dialog instead of native select
@@ -628,57 +774,6 @@
 		}, 3000);
 	}
 
-	// Helper function to get the correct health value from unit data
-	function getUnitHealth(unitData, unitId) {
-		// Try all possible paths to find health
-		const paths = [
-			unitData?.maxdamage,
-			unitData?.health,
-			unitData?.[unitId]?.maxdamage,
-			unitData?.[unitId]?.health,
-			unitData?.data?.[unitId]?.[unitId]?.maxdamage,
-			unitData?.data?.[unitId]?.maxdamage
-		];
-
-		// Return the first non-undefined value, or 0 if all are undefined
-		return paths.find((value) => value !== undefined) || 0;
-	}
-
-	// Helper function to get unit metal cost value
-	function getUnitMetal(unitData, unitId) {
-		// Check multiple paths to find the metal cost
-		const paths = [
-			// Direct paths
-			unitData?.buildcostmetal,
-			unitData?.[unitId]?.buildcostmetal,
-			unitData?.data?.[unitId]?.[unitId]?.buildcostmetal,
-			unitData?.data?.[unitId]?.buildcostmetal,
-			$unitsData?.[unitId]?.data?.[unitId]?.buildcostmetal,
-			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.buildcostmetal,
-
-			// Check cost object
-			unitData?.cost?.metal,
-			unitData?.[unitId]?.cost?.metal,
-			unitData?.data?.[unitId]?.cost?.metal,
-			unitData?.data?.[unitId]?.[unitId]?.cost?.metal,
-			$unitsData?.[unitId]?.data?.[unitId]?.cost?.metal,
-			$unitsData?.[unitId]?.data?.[unitId]?.[unitId]?.cost?.metal,
-
-			// Check metalcost property
-			unitData?.metalcost,
-			unitData?.[unitId]?.metalcost,
-			$unitsData?.[unitId]?.data?.[unitId]?.metalcost,
-
-			// Check in customparams
-			unitData?.customparams?.buildcostmetal,
-			unitData?.[unitId]?.customparams?.buildcostmetal,
-			$unitsData?.[unitId]?.data?.[unitId]?.customparams?.buildcostmetal
-		];
-
-		// Return the first non-undefined, non-null value, or 0 if all are undefined/null
-		return paths.find((value) => value !== undefined && value !== null) || 0;
-	}
-
 	// Tooltip state (keep for hover on name? Or remove if static image is enough? Let's keep for now)
 	let showTooltip = false;
 	let tooltipImageUrl = '';
@@ -700,6 +795,12 @@
 			console.warn(`Buildpic might be missing category: ${buildpic}. Using fallback path.`);
 			return `${base}/unitpics_webp/${filename}.webp`;
 		}
+	}
+
+	// Function to get unit icon path for browse and compare views
+	function getUnitIconPath(unitId) {
+		if (!$unitIconMap || !unitId || !$unitIconMap[unitId]) return '';
+		return `${base}/${$unitIconMap[unitId]}`;
 	}
 
 	function showUnitTooltip(event) {
@@ -981,345 +1082,89 @@
 				</div>
 
 				<!-- Results Table Container -->
-				<div class="relative {isFullScreen ? 'fullscreen-container' : ''}">
-					<div class="table-controls mb-2 flex justify-end">
-						<button
-							on:click={toggleFullScreen}
-							class="flex items-center gap-2 rounded-lg bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
-							aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+				<!-- Add loading check before rendering table that depends on unitIconMap -->
+				{#if unitsDataLoaded && $unitIconMap}
+					<div class="relative {isFullScreen ? 'fullscreen-container' : ''}">
+						<div class="table-controls mb-2 flex justify-end">
+							<button
+								on:click={toggleFullScreen}
+								class="flex items-center gap-2 rounded-lg bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+								aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+							>
+								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									{#if isFullScreen}
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5"
+										/>
+									{:else}
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"
+										/>
+									{/if}
+								</svg>
+								{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+							</button>
+						</div>
+						<div
+							class="overflow-x-auto {isFullScreen ? 'fullscreen-table' : 'max-h-[70vh]'}"
+							id="browse-table-container"
 						>
-							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								{#if isFullScreen}
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5"
-									/>
-								{:else}
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"
-									/>
-								{/if}
-							</svg>
-							{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-						</button>
-					</div>
-					<div
-						class="overflow-x-auto {isFullScreen ? 'fullscreen-table' : 'max-h-[70vh]'}"
-						id="browse-table-container"
-					>
-						<table class="relative w-full">
-							<thead>
-								<tr
-									class="sticky top-0 z-20 border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm"
-								>
-									{#each columns.filter((col) => col.visible) as column}
-										<th
-											class="cursor-pointer whitespace-nowrap p-3 text-left text-gray-400 hover:text-white {column.id ===
-											'unit'
-												? 'sticky left-0 z-30 min-w-[250px] bg-gray-900/95 backdrop-blur-sm'
-												: ''}"
-											on:click={() => handleColumnSort(column)}
-										>
-											<div class="flex items-center gap-1">
-												{column.name}
-												{#if sortBy === (column.id === 'unit' ? 'name' : column.id)}
-													<svg
-														class="h-4 w-4 transition-transform {sortOrder === 'desc'
-															? 'rotate-180'
-															: ''}"
-														fill="none"
-														stroke="currentColor"
-														viewBox="0 0 24 24"
-													>
-														<path
-															stroke-linecap="round"
-															stroke-linejoin="round"
-															stroke-width="2"
-															d="M5 15l7-7 7 7"
-														/>
-													</svg>
-												{/if}
-											</div>
-										</th>
-									{/each}
-								</tr>
-							</thead>
-							<tbody class="divide-y divide-gray-800/50">
-								{#each getFilteredAndSortedUnits() as unit}
-									{@const browseImagePath = getUnitImagePath(unit.data)}
-									<tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
-										<td class="sticky left-0 z-10 bg-gray-900 p-3">
-											<div class="flex min-w-[300px] items-center gap-4">
-												<!-- Increased min-width and added gap -->
-												<!-- Static Image -->
-												<div
-													class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-gray-800/50"
-												>
-													{#if browseImagePath}
-														<img
-															src={browseImagePath}
-															alt={unit.name}
-															class="max-h-full max-w-full object-contain"
-															loading="lazy"
-														/>
-													{:else}
-														<span class="text-xs text-gray-500">?</span> <!-- Placeholder -->
+							<table class="relative w-full">
+								<thead>
+									<tr
+										class="sticky top-0 z-20 border-b border-gray-700 bg-gray-900/95 backdrop-blur-sm"
+									>
+										{#each columns.filter((col) => col.visible) as column}
+											<th
+												class="cursor-pointer whitespace-nowrap p-3 text-left text-gray-400 hover:text-white {column.id ===
+												'unit'
+													? 'sticky left-0 z-30 min-w-[250px] bg-gray-900/95 backdrop-blur-sm'
+													: ''}"
+												on:click={() => handleColumnSort(column)}
+											>
+												<div class="flex items-center gap-1">
+													{column.name}
+													{#if sortBy === (column.id === 'unit' ? 'name' : column.id)}
+														<svg
+															class="h-4 w-4 transition-transform {sortOrder === 'desc'
+																? 'rotate-180'
+																: ''}"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M5 15l7-7 7 7"
+															/>
+														</svg>
 													{/if}
 												</div>
-												<!-- Unit Name and Controls -->
-												<div class="flex flex-grow items-center justify-between">
-													<div class="flex items-center gap-2">
-														<button
-															class="rounded-lg {selectedUnits.includes(unit.id)
-																? 'bg-red-600/20 hover:bg-red-600/30'
-																: 'bg-teal-600/20 hover:bg-teal-600/30'} group flex items-center gap-1.5 px-2 py-1 text-xs"
-															on:click={() => {
-																if (selectedUnits.includes(unit.id)) {
-																	// Remove the unit and compact the array
-																	selectedUnits = selectedUnits
-																		.filter((u) => u && u !== unit.id) // Keep only non-empty units that aren't the one we're removing
-																		.concat(selectedUnits.length < 2 ? [''] : []); // Add empty slot if needed to maintain minimum of 2
-																	// Ensure minimum of 2 slots
-																	while (selectedUnits.length < 2) {
-																		selectedUnits = [...selectedUnits, ''];
-																	}
-																	showNotification(`Removed ${unit.name} from comparison`);
-																} else {
-																	const emptySlot = selectedUnits.findIndex((u) => !u);
-																	if (emptySlot >= 0) {
-																		selectedUnits[emptySlot] = unit.id;
-																		selectedUnits = selectedUnits;
-																	} else {
-																		selectedUnits = [...selectedUnits, unit.id];
-																	}
-																	showNotification(`Added ${unit.name} to comparison`);
-																}
-															}}
-															aria-label={selectedUnits.includes(unit.id)
-																? 'Remove from comparison'
-																: 'Add to comparison'}
-														>
-															<span
-																class={selectedUnits.includes(unit.id)
-																	? 'text-red-400'
-																	: 'text-teal-400'}
-															>
-																<svg
-																	class="h-3 w-3"
-																	fill="none"
-																	stroke="currentColor"
-																	viewBox="0 0 24 24"
-																>
-																	{#if selectedUnits.includes(unit.id)}
-																		<path
-																			stroke-linecap="round"
-																			stroke-linejoin="round"
-																			stroke-width="2"
-																			d="M20 12H4"
-																		/>
-																	{:else}
-																		<path
-																			stroke-linecap="round"
-																			stroke-linejoin="round"
-																			stroke-width="2"
-																			d="M12 4v16m8-8H4"
-																		/>
-																	{/if}
-																</svg>
-															</span>
-															<span class="opacity-70 group-hover:opacity-100">
-																{selectedUnits.includes(unit.id) ? 'Remove' : 'Compare'}
-															</span>
-														</button>
-														<a
-															href="{base}/unit?name={unit.id}"
-															class="text-teal-400 hover:underline"
-														>
-															{unit.name}
-														</a>
-													</div>
-													<div class="flex h-6 items-center gap-2">
-														<span
-															class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400"
-														>
-															{unit.faction === 'arm' ? 'ARM' : 'COR'}
-														</span>
-														<span
-															class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
-														>
-															{unit.type}
-														</span>
-														{#if unit.subtype && unit.subtype !== 'none'}
-															<span
-																class="rounded-full bg-pink-500/20 px-2 py-0.5 text-xs text-pink-400"
-															>
-																{unit.subtype}
-															</span>
-														{/if}
-														<span
-															class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400"
-														>
-															T{unit.tech}
-														</span>
-														{#if unit.isSuicideUnit}
-															<span
-																class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400"
-															>
-																{unit.isMineUnit ? 'Mine' : 'Suicide'}
-															</span>
-														{/if}
-													</div>
-												</div>
-											</div>
-										</td>
-										{#each columns.filter((col) => col.visible && col.id !== 'unit') as column}
-											<td class="p-3 text-right text-gray-300">
-												{#if column.id === 'buildcostmetal'}
-													{@const metalPaths = [
-														$unitsData?.[unit.id]?.data?.[unit.id]?.buildcostmetal,
-														$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.buildcostmetal,
-														$unitsData?.[unit.id]?.buildcostmetal,
-														$unitsData?.[unit.id]?.data?.[unit.id]?.cost?.metal,
-														$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.cost?.metal,
-														$unitsData?.[unit.id]?.data?.[unit.id]?.metalcost,
-														$unitsData?.[unit.id]?.data?.[unit.id]?.customparams?.buildcostmetal,
-														unit.data?.buildcostmetal,
-														unit.data?.[unit.id]?.buildcostmetal
-													]}
-													{metalPaths.find((v) => v !== undefined && v !== null) ||
-														getUnitMetal(unit.data, unit.id) ||
-														0}
-												{:else if column.id === 'maxdamage' || column.id === 'health'}
-													{#if $unitsData?.[unit.id]?.data?.[unit.id]?.[column.id] !== undefined}
-														{$unitsData?.[unit.id]?.data?.[unit.id]?.[column.id]}
-													{:else if $unitsData?.[unit.id]?.data?.[unit.id]?.maxdamage !== undefined}
-														{$unitsData?.[unit.id]?.data?.[unit.id]?.maxdamage}
-													{:else if $unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.maxdamage !== undefined}
-														{$unitsData?.[unit.id]?.data?.[unit.id]?.[unit.id]?.maxdamage}
-													{:else}
-														{0}
-													{/if}
-												{:else}
-													{formatValueWithContext(unit[column.id], column.id)} 
-												{/if}
-											</td>
+											</th>
 										{/each}
 									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		{:else}
-			<!-- Compare Mode (existing comparison UI) -->
-			<div class="rounded-lg bg-gray-900 shadow-xl">
-				<header class="mb-8 text-center">
-					<h1
-						class="mb-4 bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-4xl font-bold text-transparent"
-					>
-						Unit Comparison
-					</h1>
-					<p class="mx-auto max-w-2xl text-gray-400">
-						Compare multiple units side by side. Add or remove units using the controls below.
-					</p>
-				</header>
-
-				<!-- Unit Selection Controls -->
-				<div class="mb-8">
-					<div class="flex flex-wrap items-start gap-4">
-						{#each selectedUnits as unitId, index}
-							<div class="min-w-[250px] max-w-[300px] flex-1 rounded-lg bg-gray-800/50 p-4">
-								<div class="mb-4 flex items-center justify-between">
-									<h3 class="font-medium text-white">Unit {index + 1}</h3>
-									{#if selectedUnits.length > 2}
-										<button
-											on:click={() => removeUnitSlot(index)}
-											class="text-gray-400 transition-colors hover:text-red-400"
-											aria-label="Remove unit slot"
-										>
-											<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M6 18L18 6M6 6l12 12"
-												/>
-											</svg>
-										</button>
-									{/if}
-								</div>
-								<select
-									bind:value={selectedUnits[index]}
-									class="w-full rounded-lg border border-gray-600/50 bg-gray-700/50 px-3 py-2 text-white"
-								>
-									<option value="">Select a unit...</option>
-									{#each unitsList as unit}
-										<option value={unit.id} class="flex items-center gap-2">
-											{unit.name}
-											[{unit.faction === 'arm' ? 'ARM' : 'COR'}] [{unit.type}
-											{unit.subtype !== 'none' ? `/${unit.subtype}` : ''}] [T{unit.tech}]
-										</option>
-									{/each}
-								</select>
-							</div>
-						{/each}
-
-						<button
-							on:click={addUnitSlot}
-							class="flex items-center gap-2 rounded-lg bg-teal-600/20 px-4 py-2 text-teal-400 transition-colors hover:bg-teal-600/30"
-						>
-							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M12 4v16m8-8H4"
-								/>
-							</svg>
-							Add Unit
-						</button>
-					</div>
-				</div>
-
-				<!-- Comparison Table -->
-				{#if selectedUnitsData.some((u) => u)}
-					<div
-						class="relative overflow-auto"
-						style="max-height: calc(100vh - 250px);"
-						on:mouseenter={handleTableHover}
-						role="region"
-					>
-						<table class="relative w-full border-collapse">
-							<thead>
-								<tr class="sticky top-0 z-20">
-									<th
-										class="sticky left-0 z-30 w-1/4 min-w-[200px] rounded-tl-lg bg-gray-800/95 p-4 text-left backdrop-blur-sm"
-									>
-										Property
-									</th>
-									{#each selectedUnitsData as unit, i}
-										<th
-											class="w-1/4 min-w-[300px] bg-gray-800/95 p-4 backdrop-blur-sm {i ===
-											selectedUnitsData.length - 1
-												? 'rounded-tr-lg'
-												: ''}"
-										>
-											{#if unit}
-												{@const compareImagePath = getUnitImagePath(unit.data)}
-												<!-- Add image to header -->
-												<div class="flex flex-col items-center gap-3">
+								</thead>
+								<tbody class="divide-y divide-gray-800/50">
+									{#each getFilteredAndSortedUnits() as unit (unit.id)}
+										{@const browseImagePath = getUnitImagePath(unit.data)}
+										{@const browseIconPath = getUnitIconPath(unit.id)}
+										<tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+											<td class="sticky left-0 z-10 bg-gray-900 p-3">
+												<div class="flex min-w-[300px] items-center gap-3">
 													<div
-														class="flex h-16 w-16 items-center justify-center overflow-hidden rounded bg-gray-700/50"
+														class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-gray-800/50"
 													>
-														{#if compareImagePath}
+														{#if browseImagePath}
 															<img
-																src={compareImagePath}
+																src={browseImagePath}
 																alt={unit.name}
 																class="max-h-full max-w-full object-contain"
 																loading="lazy"
@@ -1328,257 +1173,531 @@
 															<span class="text-xs text-gray-500">?</span>
 														{/if}
 													</div>
-													<div class="space-y-1">
-														<a
-															href="{base}/unit?name={unit.id}"
-															class="inline-block font-medium text-white transition-colors hover:text-teal-400"
-														>
-															{unit.name}
-														</a>
-														<div class="flex justify-center gap-2 text-sm">
+
+													{#if browseIconPath}
+														<div class="h-8 w-8 flex-shrink-0">
+															<img
+																src={browseIconPath}
+																alt="{unit.name} icon"
+																class="max-h-full max-w-full object-contain"
+																loading="lazy"
+															/>
+														</div>
+													{/if}
+
+													<div class="flex flex-grow items-center justify-between">
+														<div class="flex items-center gap-2">
+															<button
+																class="rounded-lg {selectedUnits.includes(unit.id)
+																	? 'bg-red-600/20 hover:bg-red-600/30'
+																	: 'bg-teal-600/20 hover:bg-teal-600/30'} group flex items-center gap-1.5 px-2 py-1 text-xs"
+																on:click={() => {
+																	if (selectedUnits.includes(unit.id)) {
+																		selectedUnits = selectedUnits
+																			.filter((u) => u && u !== unit.id)
+																			.concat(selectedUnits.length < 2 ? [''] : []);
+																		while (selectedUnits.length < 2) {
+																			selectedUnits = [...selectedUnits, ''];
+																		}
+																		showNotification(`Removed ${unit.name} from comparison`);
+																	} else {
+																		const emptySlot = selectedUnits.findIndex((u) => !u);
+																		if (emptySlot >= 0) {
+																			selectedUnits[emptySlot] = unit.id;
+																			selectedUnits = selectedUnits;
+																		} else {
+																			selectedUnits = [...selectedUnits, unit.id];
+																		}
+																		showNotification(`Added ${unit.name} to comparison`);
+																	}
+																}}
+																aria-label={selectedUnits.includes(unit.id)
+																	? 'Remove from comparison'
+																	: 'Add to comparison'}
+															>
+																<span
+																	class={selectedUnits.includes(unit.id)
+																		? 'text-red-400'
+																		: 'text-teal-400'}
+																>
+																	<svg
+																		class="h-3 w-3"
+																		fill="none"
+																		stroke="currentColor"
+																		viewBox="0 0 24 24"
+																	>
+																		{#if selectedUnits.includes(unit.id)}
+																			<path
+																				stroke-linecap="round"
+																				stroke-linejoin="round"
+																				stroke-width="2"
+																				d="M20 12H4"
+																			/>
+																		{:else}
+																			<path
+																				stroke-linecap="round"
+																				stroke-linejoin="round"
+																				stroke-width="2"
+																				d="M12 4v16m8-8H4"
+																			/>
+																		{/if}
+																	</svg>
+																</span>
+																<span class="opacity-70 group-hover:opacity-100">
+																	{selectedUnits.includes(unit.id) ? 'Remove' : 'Compare'}
+																</span>
+															</button>
+															<a
+																href="{base}/unit?name={unit.id}"
+																class="text-teal-400 hover:underline"
+															>
+																{unit.name}
+															</a>
+														</div>
+														<div class="flex h-6 items-center gap-2">
 															<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
-																{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
+																{unit.faction === 'arm' ? 'ARM' : 'COR'}
 															</span>
 															<span
-																class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-400"
+																class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
 															>
 																{unit.type}
 															</span>
 															{#if unit.subtype && unit.subtype !== 'none'}
-																<span class="rounded-full bg-pink-500/20 px-2 py-0.5 text-pink-400">
+																<span
+																	class="rounded-full bg-pink-500/20 px-2 py-0.5 text-xs text-pink-400"
+																>
 																	{unit.subtype}
 																</span>
 															{/if}
-															<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
-																Tech {unit.tech}
+															<span
+																class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400"
+															>
+																T{unit.tech}
 															</span>
-															{#if unit?.isSuicideUnit}
-																<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
+															{#if unit.isSuicideUnit}
+																<span
+																	class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400"
+																>
 																	{unit.isMineUnit ? 'Mine' : 'Suicide'}
 																</span>
 															{/if}
 														</div>
 													</div>
 												</div>
-											{:else}
-												<span class="text-gray-500">No unit selected</span>
-											{/if}
-										</th>
-									{/each}
-								</tr>
-							</thead>
-							<tbody class="divide-y divide-gray-800/50">
-								{#each Object.entries(comparableProperties) as [category, props]}
-									{#if props.length > 0}
-										<!-- Category Header -->
-										<tr class={getCategoryStyle(category)}>
-											<td
-												class="sticky left-0 p-4 font-medium text-teal-400"
-												colspan={selectedUnitsData.length + 1}
-											>
-												<div class="flex items-center gap-2">
-													<div class="absolute inset-0 {getCategoryStyle(category)}"></div>
-													<div class="relative flex items-center gap-2">
-														<svg
-															class="h-5 w-5"
-															fill="none"
-															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																stroke-linecap="round"
-																stroke-linejoin="round"
-																stroke-width="1.5"
-																d={getCategoryIcon(category)}
-															/>
-														</svg>
-														<span class="capitalize">{category}</span>
-													</div>
-												</div>
 											</td>
+											{#each columns.filter((col) => col.visible && col.id !== 'unit') as column}
+												<td class="p-3 text-right text-gray-300">
+													<!-- Use the pre-typed value from the unit object -->
+													{formatValueWithContext(unit[column.id], column.id)}
+												</td>
+											{/each}
 										</tr>
-										<!-- Show weapons at the top of combat section -->
-										{#if category === 'combat'}
-											{#if selectedUnitsData.some((u) => u?.weapons?.length > 0)}
-												<tr>
-													<td class="left-0 bg-gray-900/95 p-4"></td>
-													{#each selectedUnitsData as unit}
-														<td class="p-4 align-top">
-															<div class="top-0 rounded-lg bg-gray-800/50 p-4">
-																{#if unit?.weapons?.length > 0}
-																	{#if unit.combatStats}
-																		<div class="flex justify-center gap-2 text-sm">
-																			<span
-																				class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400"
-																			>
-																				DPS: {unit.combatStats.totalDps}
-																			</span>
-																			<span
-																				class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400"
-																			>
-																				Range: {unit.combatStats.maxRange}
-																			</span>
-																		</div>
-																	{/if}
-																	<div class="mt-4 space-y-3">
-																		{#each unit.weapons as weapon}
-																			<div
-																				class="rounded-lg border border-gray-700/30 bg-gray-900/50 p-3"
-																			>
-																				<div class="mb-2 font-medium text-gray-300">
-																					{weapon.type}
-																					{#if weapon.isEMP}
-																						<span
-																							class="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
-																						>
-																							EMP
-																						</span>
-																					{/if}
-																					{#if weapon.isNotFlame}
-																						<span
-																							class="ml-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-400"
-																						>
-																							Special
-																						</span>
-																					{/if}
-																				</div>
-																				<div class="grid grid-cols-2 gap-2 text-sm">
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">Damage</span>
-																						<span class="font-medium text-red-400"
-																							>{weapon.damage}</span
-																						>
-																					</div>
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">DPS</span>
-																						<span class="font-medium text-orange-400"
-																							>{#if weapon.isEMP}
-																								N/A (EMP)
-																							{:else if weapon.isNotFlame}
-																								N/A (Special)
-																							{:else}
-																								{weapon.dps}
-																							{/if}</span
-																						>
-																					</div>
-																					{#if weapon.isEMP}
-																						<div class="flex justify-between">
-																							<span class="text-gray-400"
-																								>{getDisplayName('paralyzemultiplier')}</span
-																							>
-																							<span class="font-medium text-yellow-400"
-																								>x{weapon.paralyzeMultiplier}</span
-																							>
-																						</div>
-																						<div class="flex justify-between">
-																							<span class="text-gray-400">Paralyze DPS</span>
-																							<span class="font-medium text-yellow-400"
-																								>{weapon.paralyzeDps}</span
-																							>
-																						</div>
-																					{/if}
-																					{#if weapon.burstCount > 1}
-																						<div class="flex justify-between">
-																							<span class="text-gray-400">Burst</span>
-																							<span class="font-medium text-green-400"
-																								>x{weapon.burstCount}</span
-																							>
-																						</div>
-																					{/if}
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">Range</span>
-																						<span class="font-medium text-blue-400"
-																							>{weapon.range}</span
-																						>
-																					</div>
-																					<div class="flex justify-between">
-																						<span class="text-gray-400">Reload</span>
-																						<span class="font-medium text-purple-400"
-																							>{weapon.reloadTime}s</span
-																						>
-																					</div>
-																				</div>
-																			</div>
-																		{/each}
-																	</div>
-																{:else}
-																	<div
-																		class="flex items-center justify-center rounded-lg border border-gray-700/30 bg-gray-900/50 p-4"
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				{:else}
+					<div class="py-12 text-center text-gray-400">Loading unit data and icons...</div>
+				{/if}
+			</div>
+		{:else}
+			<!-- Compare Mode -->
+			{#if unitsDataLoaded && $unitIconMap}
+				<div class="rounded-lg bg-gray-900 shadow-xl">
+					<header class="mb-8 text-center">
+						<h1
+							class="mb-4 bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-4xl font-bold text-transparent"
+						>
+							Unit Comparison
+						</h1>
+						<p class="mx-auto max-w-2xl text-gray-400">
+							Compare multiple units side by side. Add or remove units using the controls below.
+						</p>
+					</header>
+
+					<!-- Unit Selection Controls -->
+					<div class="mb-8">
+						<div class="flex flex-wrap items-start gap-4">
+							{#each selectedUnits as unitId, index}
+								<div class="min-w-[250px] max-w-[300px] flex-1 rounded-lg bg-gray-800/50 p-4">
+									<div class="mb-4 flex items-center justify-between">
+										<h3 class="font-medium text-white">Unit {index + 1}</h3>
+										{#if selectedUnits.length > 2}
+											<button
+												on:click={() => removeUnitSlot(index)}
+												class="text-gray-400 transition-colors hover:text-red-400"
+												aria-label="Remove unit slot"
+											>
+												<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M6 18L18 6M6 6l12 12"
+													/>
+												</svg>
+											</button>
+										{/if}
+									</div>
+									<select
+										bind:value={selectedUnits[index]}
+										class="w-full rounded-lg border border-gray-600/50 bg-gray-700/50 px-3 py-2 text-white"
+									>
+										<option value="">Select a unit...</option>
+										{#each unitsList as unit}
+											<option value={unit.id} class="flex items-center gap-2">
+												{unit.name}
+												[{unit.faction === 'arm' ? 'ARM' : 'COR'}] [{unit.type}
+												{unit.subtype !== 'none' ? `/${unit.subtype}` : ''}] [T{unit.tech}]
+											</option>
+										{/each}
+									</select>
+								</div>
+							{/each}
+
+							<button
+								on:click={addUnitSlot}
+								class="flex items-center gap-2 rounded-lg bg-teal-600/20 px-4 py-2 text-teal-400 transition-colors hover:bg-teal-600/30"
+							>
+								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 4v16m8-8H4"
+									/>
+								</svg>
+								Add Unit
+							</button>
+						</div>
+					</div>
+
+					<!-- Comparison Table -->
+					{#if selectedUnitsData.some((u) => u)}
+						<div
+							class="relative overflow-auto"
+							style="max-height: calc(100vh - 250px);"
+							on:mouseenter={handleTableHover}
+							role="region"
+						>
+							<table class="relative w-full border-collapse">
+								<thead>
+									<tr class="sticky top-0 z-20">
+										<th
+											class="sticky left-0 z-30 w-1/4 min-w-[200px] rounded-tl-lg bg-gray-800/95 p-4 text-left backdrop-blur-sm"
+										>
+											Property
+										</th>
+										{#each selectedUnitsData as unit, i}
+											<th
+												class="w-1/4 min-w-[300px] bg-gray-800/95 p-4 backdrop-blur-sm {i ===
+												selectedUnitsData.length - 1
+													? 'rounded-tr-lg'
+													: ''}"
+											>
+												{#if unit}
+													{@const compareImagePath = getUnitImagePath(unit.data)}
+													{@const compareIconPath = getUnitIconPath(unit.id)}
+													<!-- Add image to header -->
+													<div class="flex flex-col items-center gap-3">
+														<div
+															class="flex h-16 w-16 items-center justify-center overflow-hidden rounded bg-gray-700/50"
+														>
+															{#if compareImagePath}
+																<img
+																	src={compareImagePath}
+																	alt={unit.name}
+																	class="max-h-full max-w-full object-contain"
+																	loading="lazy"
+																/>
+															{:else}
+																<span class="text-xs text-gray-500">?</span>
+															{/if}
+														</div>
+														<div class="space-y-1 text-center">
+															<a
+																href="{base}/unit?name={unit.id}"
+																class="inline-block font-medium text-white transition-colors hover:text-teal-400"
+															>
+																{unit.name}
+															</a>
+															{#if compareIconPath}
+																<div class="mx-auto h-6 w-6">
+																	<img
+																		src={compareIconPath}
+																		alt="{unit.name} icon"
+																		class="max-h-full max-w-full object-contain"
+																		loading="lazy"
+																	/>
+																</div>
+															{/if}
+															<div class="flex justify-center gap-2 text-sm">
+																<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
+																	{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
+																</span>
+																<span
+																	class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-400"
+																>
+																	{unit.type}
+																</span>
+																{#if unit.subtype && unit.subtype !== 'none'}
+																	<span
+																		class="rounded-full bg-pink-500/20 px-2 py-0.5 text-pink-400"
 																	>
-																		<span class="text-sm text-gray-500">No weapons</span>
-																	</div>
+																		{unit.subtype}
+																	</span>
+																{/if}
+																<span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
+																	Tech {unit.tech}
+																</span>
+																{#if unit?.isSuicideUnit}
+																	<span class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
+																		{unit.isMineUnit ? 'Mine' : 'Suicide'}
+																	</span>
 																{/if}
 															</div>
+														</div>
+													</div>
+												{:else}
+													<span class="text-gray-500">No unit selected</span>
+												{/if}
+											</th>
+										{/each}
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-800/50">
+									{#each Object.entries(comparableProperties) as [category, props]}
+										{#if props.length > 0}
+											<!-- Category Header -->
+											<tr class={getCategoryStyle(category)}>
+												<td
+													class="sticky left-0 p-4 font-medium text-teal-400"
+													colspan={selectedUnitsData.length + 1}
+												>
+													<div class="flex items-center gap-2">
+														<div class="absolute inset-0 {getCategoryStyle(category)}"></div>
+														<div class="relative flex items-center gap-2">
+															<svg
+																class="h-5 w-5"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="1.5"
+																	d={getCategoryIcon(category)}
+																/>
+															</svg>
+															<span class="capitalize">{category}</span>
+														</div>
+													</div>
+												</td>
+											</tr>
+											<!-- Show weapons at the top of combat section -->
+											{#if category === 'combat'}
+												{#if selectedUnitsData.some((u) => u?.weapons?.length > 0)}
+													<tr>
+														<td class="left-0 bg-gray-900/95 p-4"></td>
+														{#each selectedUnitsData as unit}
+															<td class="p-4 align-top">
+																<div class="top-0 rounded-lg bg-gray-800/50 p-4">
+																	{#if unit?.weapons?.length > 0}
+																		{#if unit.combatStats}
+																			<div class="flex justify-center gap-2 text-sm">
+																				<span
+																					class="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400"
+																				>
+																					DPS: {unit.combatStats.totalDps}
+																				</span>
+																				<span
+																					class="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400"
+																				>
+																					Range: {unit.combatStats.maxRange}
+																				</span>
+																			</div>
+																		{/if}
+																		<div class="mt-4 space-y-3">
+																			{#each unit.weapons as weapon}
+																				<div
+																					class="rounded-lg border border-gray-700/30 bg-gray-900/50 p-3"
+																				>
+																					<div class="mb-2 font-medium text-gray-300">
+																						{weapon.type}
+																						{#if weapon.isEMP}
+																							<span
+																								class="ml-1 rounded-full bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400"
+																							>
+																								EMP
+																							</span>
+																						{/if}
+																						{#if weapon.isNotFlame}
+																							<span
+																								class="ml-1 rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-medium text-orange-400"
+																							>
+																								Special
+																							</span>
+																						{/if}
+																					</div>
+																					<div class="grid grid-cols-2 gap-2 text-sm">
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">Damage</span>
+																							<span class="font-medium text-red-400"
+																								>{weapon.damage}</span
+																							>
+																						</div>
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">DPS</span>
+																							<span class="font-medium text-orange-400"
+																								>{#if weapon.isEMP}
+																									N/A (EMP)
+																								{:else if weapon.isNotFlame}
+																									N/A (Special)
+																								{:else}
+																									{weapon.dps}
+																								{/if}</span
+																							>
+																						</div>
+																						{#if weapon.isEMP}
+																							<div class="flex justify-between">
+																								<span class="text-gray-400"
+																									>{getDisplayName('paralyzemultiplier')}</span
+																								>
+																								<span class="font-medium text-yellow-400"
+																									>x{weapon.paralyzeMultiplier}</span
+																								>
+																							</div>
+																							<div class="flex justify-between">
+																								<span class="text-gray-400">Paralyze DPS</span>
+																								<span class="font-medium text-yellow-400"
+																									>{weapon.paralyzeDps}</span
+																								>
+																							</div>
+																						{/if}
+																						{#if weapon.burstCount > 1}
+																							<div class="flex justify-between">
+																								<span class="text-gray-400">Burst</span>
+																								<span class="font-medium text-green-400"
+																									>x{weapon.burstCount}</span
+																								>
+																							</div>
+																						{/if}
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">Range</span>
+																							<span class="font-medium text-blue-400"
+																								>{weapon.range}</span
+																							>
+																						</div>
+																						<div class="flex justify-between">
+																							<span class="text-gray-400">Reload</span>
+																							<span class="font-medium text-purple-400"
+																								>{weapon.reloadTime}s</span
+																							>
+																						</div>
+																					</div>
+																				</div>
+																			{/each}
+																		</div>
+																	{:else}
+																		<div
+																			class="flex items-center justify-center rounded-lg border border-gray-700/30 bg-gray-900/50 p-4"
+																		>
+																			<span class="text-sm text-gray-500">No weapons</span>
+																		</div>
+																	{/if}
+																</div>
+															</td>
+														{/each}
+													</tr>
+												{/if}
+											{/if}
+											<!-- Properties in this category -->
+											{#each props as prop}
+												<!-- Use unit.data for object expansion, unit[prop] for direct display -->
+												{@const values = selectedUnitsData.map((u) =>
+													u
+														? typeof u.data?.[prop] === 'object'
+															? u.data[prop]
+															: u[prop]
+														: undefined
+												)}
+												{@const displayValues = selectedUnitsData.map((u) =>
+													u ? u[prop] : undefined
+												)}
+												{@const allSame = displayValues.every(
+													(v) => JSON.stringify(v) === JSON.stringify(displayValues[0])
+												)}
+												<tr class="transition-colors hover:bg-gray-800/30">
+													<td
+														class="sticky left-0 z-10 p-4 pl-8 text-gray-400"
+														style="background: linear-gradient(to right, rgb(17 24 39 / 0.95), rgb(17 24 39 / 0.95)) padding-box, rgb(55 65 81 / 0.5) border-box; border-right: 2px solid transparent; backdrop-filter: blur(4px);"
+														>{getDisplayName(prop)}</td
+													>
+													{#each values as value, i}
+														<td
+															class="p-4 text-center {!allSame && value !== undefined
+																? 'font-medium'
+																: ''} {allSame ? 'text-gray-300' : 'text-white'}"
+														>
+															{#if value === undefined || value === null}
+																<span class="text-gray-500">—</span>
+															{:else if typeof value === 'object' && value !== null}
+																{#if expandedFields.has(prop)}
+																	<div
+																		class="bg-gray-850/50 space-y-1 overflow-y-auto rounded-md p-2"
+																		style="max-height: 32rem;"
+																	>
+																		<RecursiveObjectDisplay data={value} />
+																	</div>
+																	<button
+																		class="mt-2 text-xs text-teal-400 hover:text-teal-300"
+																		on:click={() => toggleExpanded(prop)}
+																	>
+																		Collapse
+																	</button>
+																{:else}
+																	<button
+																		class="text-sm text-teal-400 hover:text-teal-300"
+																		on:click={() => toggleExpanded(prop)}
+																	>
+																		{#if prop === 'buildoptions'}
+																			View Build Options ({Object.keys(value).length})
+																		{:else if prop === 'weapondefs'}
+																			View Weapon Definitions ({Object.keys(value).length})
+																		{:else if prop === 'weapons'}
+																			View Weapons ({Object.keys(value).length})
+																		{:else if prop === 'customparams'}
+																			View Custom Parameters ({Object.keys(value).length})
+																		{:else}
+																			View Details ({Object.keys(value).length})
+																		{/if}
+																	</button>
+																{/if}
+															{:else}
+																<!-- Use displayValues[i] here for the formatted value -->
+																{formatValueWithContext(displayValues[i], prop)}
+															{/if}
 														</td>
 													{/each}
 												</tr>
-											{/if}
+											{/each}
 										{/if}
-										<!-- Properties in this category -->
-										{#each props as prop}
-											{@const values = selectedUnitsData.map((u) => u?.data?.[prop])}
-											{@const allSame = values.every((v) => v === values[0])}
-											<tr class="transition-colors hover:bg-gray-800/30">
-												<td
-													class="sticky left-0 z-10 p-4 pl-8 text-gray-400"
-													style="background: linear-gradient(to right, rgb(17 24 39 / 0.95), rgb(17 24 39 / 0.95)) padding-box, rgb(55 65 81 / 0.5) border-box; border-right: 2px solid transparent; backdrop-filter: blur(4px);"
-													>{getDisplayName(prop)}</td
-												>
-												{#each values as value, i}
-													<td
-														class="p-4 text-center {!allSame && value !== undefined
-															? 'font-medium'
-															: ''} {allSame ? 'text-gray-300' : 'text-white'}"
-													>
-														{#if value === undefined || value === null}
-															<span class="text-gray-500">—</span>
-														{:else if typeof value === 'object' && value !== null}
-															{#if expandedFields.has(prop)}
-																<div class="space-y-1 overflow-y-auto rounded-md bg-gray-850/50 p-2" style="max-height: 32rem;">
-																	<RecursiveObjectDisplay data={value} />
-																</div>
-																<button
-																	class="mt-2 text-xs text-teal-400 hover:text-teal-300"
-																	on:click={() => toggleExpanded(prop)}
-																>
-																	Collapse
-																</button>
-															{:else}
-																<button
-																	class="text-sm text-teal-400 hover:text-teal-300"
-																	on:click={() => toggleExpanded(prop)}
-																>
-																	{#if prop === 'buildoptions'}
-																		View Build Options ({Object.keys(value).length})
-																	{:else if prop === 'weapondefs'}
-																		View Weapon Definitions ({Object.keys(value).length})
-																	{:else if prop === 'weapons'}
-																		View Weapons ({Object.keys(value).length})
-																	{:else if prop === 'customparams'}
-																		View Custom Parameters ({Object.keys(value).length})
-																	{:else}
-																		View Details ({Object.keys(value).length})
-																	{/if}
-																</button>
-															{/if}
-														{:else}
-															{formatValueWithContext(value, prop)}
-														{/if}
-													</td>
-												{/each}
-											</tr>
-										{/each}
-									{/if}
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				{:else}
-					<div class="py-12 text-center text-gray-400">
-						Select units to compare their properties
-					</div>
-				{/if}
-			</div>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{:else}
+						<div class="py-12 text-center text-gray-400">
+							Select units to compare their properties
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="py-12 text-center text-gray-400">Loading unit data and icons...</div>
+			{/if}
 		{/if}
 	</div>
 

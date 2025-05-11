@@ -24,8 +24,7 @@ export const propertyToDisplayName = {
   "dps": "DPS",
   "seismicsignature": "Seismic Signature",
   "buildcostenergy": "Energy Cost",
-  "buildcostmetal": "Metal Cost"
-};
+  "buildcostmetal": "Metal Cost"};
 ```
 
 ## Keywords to format:

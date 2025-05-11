@@ -1,7 +1,13 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import * as d3 from 'd3';
-	import { loadData, unitNamesDetails, unitsByFactionTypeTech, unitsData } from '$lib/data';
+	import {
+		loadData,
+		unitNamesDetails,
+		unitsByFactionTypeTech,
+		unitsData,
+		unitIconMap
+	} from '$lib/data';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { base } from '$app/paths';
 
@@ -134,17 +140,27 @@
 		const parts = buildpic.split('/');
 		// Remove strict checks as per unit page logic
 		const filenameWithExt = parts.pop();
-		const category = parts.pop(); 
+		const category = parts.pop();
 		const filename = filenameWithExt.split('.')[0].toLowerCase(); // Add lowercase
-		
-		if(category){ // Use fallback logic
+
+		if (category) {
+			// Use fallback logic
 			return `${base}/unitpics_webp/${category}/${filename}.webp`;
 		} else {
 			// Fallback if category is somehow missing (e.g., path like 'lups/unitpics/someunit.dds')
 			// Or handle cases where buildpic might just be 'filename.dds' - needs confirmation of data structure
-			console.warn(`Buildpic for ${unitDbName} might be missing category: ${buildpic}. Using fallback path.`);
+			console.warn(
+				`Buildpic for ${unitDbName} might be missing category: ${buildpic}. Using fallback path.`
+			);
 			return `${base}/unitpics_webp/${filename}.webp`;
 		}
+	}
+
+	// Function to get unit icon path (Added)
+	function getUnitIconPath(unitId) {
+		if (!$unitIconMap || !unitId || !$unitIconMap[unitId]) return '';
+		// Assuming unit_icons_webp is directly in static
+		return `${base}/${$unitIconMap[unitId]}`;
 	}
 
 	// Modify generateTooltipContent
@@ -272,14 +288,20 @@
 		} else if (d.group === 'unit') {
 			const path = d.id.split('-');
 			const imagePath = getUnitImagePath(d.dbName);
-			const imageHtml = imagePath 
-				? `<div class="mb-4 flex justify-center"><img src="${imagePath}" alt="${d.name}" class="max-w-[150px] max-h-[150px] object-contain rounded border border-gray-700"></div>` 
+			const imageHtml = imagePath
+				? `<div class="mb-4 flex justify-center"><img src="${imagePath}" alt="${d.name}" class="max-w-[150px] max-h-[150px] object-contain rounded border border-gray-700"></div>`
 				: ''; // Empty string if no image
+
+			const iconPath = getUnitIconPath(d.dbName); // Get icon path
+			const iconHtml = iconPath // Generate icon HTML if path exists
+				? `<div class="mt-2 flex justify-center"><img src="${iconPath}" alt="${d.name} icon" class="max-w-[48px] max-h-[48px] object-contain"></div>`
+				: '';
 
 			content = `
 				<div class="p-4 bg-gray-900/95 rounded-lg shadow-xl">
 					${imageHtml}
-					<div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-700">
+					${iconHtml}
+					<div class="flex items-center justify-between mt-2 mb-4 pb-3 border-b border-gray-700">
 						<a href="${base}/unit?name=${d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${d.name}</a>
 						<span class="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full uppercase tracking-wide">${d.group}</span>
 					</div>
@@ -529,7 +551,7 @@
 
 				// Set the HTML content using the modified generateTooltipContent
 				tooltip.html(generateTooltipContent(d));
-				
+
 				// Position D3 tooltip (remains the same)
 				const tooltipNode = tooltip.node();
 				const tooltipRect = tooltipNode.getBoundingClientRect();
@@ -565,7 +587,7 @@
 				// Start timer to hide D3 tooltip (remains the same)
 				const tooltip = d3.select('body').select('.tooltip');
 				if (!tooltip.node()?.matches(':hover')) {
-					handleTooltipHide(); 
+					handleTooltipHide();
 				}
 			});
 

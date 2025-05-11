@@ -1,46 +1,49 @@
 import { writable } from 'svelte/store';
 import { base } from '$app/paths';
 
-export const unitsData = writable(null);
-export const unitNamesDetails = writable(null);
-export const unitsByFaction = writable(null);
-export const unitsByType = writable(null);
-export const unitsByTech = writable(null);
-export const unitsByFactionTypeTech = writable(null);
-export const factionsList = writable(null);
-export const typesWithSubtypes = writable(null);
+export let unitsData = writable(null);
+export let unitNamesDetails = writable(null);
+export let unitsByFaction = writable(null);
+export let unitsByType = writable(null);
+export let unitsByTech = writable(null);
+export let unitsByFactionTypeTech = writable(null);
+export let factionsList = writable(null);
+export let typesWithSubtypes = writable(null);
+export let unitIconMap = writable(null);
+
+let dataLoaded = false;
 
 export async function loadData() {
-    try {
-        const [
-            unitsDataResponse,
-            unitNamesDetailsResponse,
-            unitsByFactionResponse,
-            unitsByTypeResponse,
-            unitsByTechResponse,
-            unitsByFactionTypeTechResponse,
-            factionsListResponse,
-            typesWithSubtypesResponse
-        ] = await Promise.all([
-            fetch(`${base}/units_data.json`).then(res => res.json()),
-            fetch(`${base}/unit_names_details.json`).then(res => res.json()),
-            fetch(`${base}/units_by_faction.json`).then(res => res.json()),
-            fetch(`${base}/units_by_type.json`).then(res => res.json()),
-            fetch(`${base}/units_by_tech.json`).then(res => res.json()),
-            fetch(`${base}/units_by_faction_type_tech.json`).then(res => res.json()),
-            fetch(`${base}/factions_list.json`).then(res => res.json()),
-            fetch(`${base}/types_with_subtypes.json`).then(res => res.json())
-        ]);
+	if (dataLoaded) return;
 
-        unitsData.set(unitsDataResponse);
-        unitNamesDetails.set(unitNamesDetailsResponse);
-        unitsByFaction.set(unitsByFactionResponse);
-        unitsByType.set(unitsByTypeResponse);
-        unitsByTech.set(unitsByTechResponse);
-        unitsByFactionTypeTech.set(unitsByFactionTypeTechResponse);
-        factionsList.set(factionsListResponse);
-        typesWithSubtypes.set(typesWithSubtypesResponse);
-    } catch (error) {
-        console.error('Error loading data:', error);
-    }
+	const dataFiles = [
+		'units_data.json',
+		'unit_names_details.json',
+		'units_by_faction.json',
+		'units_by_type.json',
+		'units_by_tech.json',
+		'units_by_faction_type_tech.json',
+		'factions_list.json',
+		'types_with_subtypes.json',
+		'unit_icon_map.json'
+	];
+
+	const [ud, und, ubf, ubt, ubtech, ubftt, fl, tws, uim] = await Promise.all(
+		dataFiles.map(async (file) => {
+			const response = await fetch(`${base}/${file}`);
+			return response.json();
+		})
+	);
+
+	unitsData.set(ud);
+	unitNamesDetails.set(und);
+	unitsByFaction.set(ubf);
+	unitsByType.set(ubt);
+	unitsByTech.set(ubtech);
+	unitsByFactionTypeTech.set(ubftt);
+	factionsList.set(fl);
+	typesWithSubtypes.set(tws);
+	unitIconMap.set(uim);
+
+	dataLoaded = true;
 }
