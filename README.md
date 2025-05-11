@@ -185,8 +185,8 @@ BAR GitHub Repository → Python Parser → Processed JSON/WebP → SvelteKit Fr
 1. **Run the data parser:**
 
    ```bash
-   cd units-parser
-   python main.py
+      cd units-parser
+      python main.py
    ```
 
    **Options:**
@@ -258,14 +258,14 @@ Contributions are welcome! Here's how you can help:
 
 3. **Create a feature branch from development:**
 
-   ```bash
+```bash
    # First, make sure you have the latest development branch
    git checkout development
    git pull origin development
 
    # Then create your feature branch
    git checkout -b feature/your-feature-name
-   ```
+```
 
 4. **Make your changes and commit them:**
 
@@ -275,9 +275,9 @@ Contributions are welcome! Here's how you can help:
 
 5. **Push to your branch:**
 
-   ```bash
+```bash
    git push origin feature/your-feature-name
-   ```
+```
 
 6. **Create a Pull Request to the development branch (not main)**
 

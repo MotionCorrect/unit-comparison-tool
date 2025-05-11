@@ -53,23 +53,32 @@ jobs:
           cd units-parser
           python main.py
 
-      - name: Install Node dependencies
+      - name: Install dependencies
         run: pnpm install
 
       - name: Build site
         run: |
           BASE_PATH="/${{ github.event.repository.name }}" pnpm run build
 
+      - name: Check build output
+        run: |
+          if [ -d "build" ]; then
+            echo "✅ Build completed successfully"
+            ls -la build
+          else
+            echo "❌ Build directory not found"
+            exit 1
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v3
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: build
+          path: build/
 
   deploy:
-    if: github.event.pull_request.merged == true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -78,4 +87,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
