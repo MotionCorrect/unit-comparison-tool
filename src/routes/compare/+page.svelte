@@ -401,6 +401,9 @@
 			// Add other commonly compared numeric fields here
 		};
 	});
+	if (import.meta.env.DEV) {
+		console.log(selectedUnitsData);
+	}
 
 	function getCategoryStyle(category) {
 		const styles = {
@@ -1068,10 +1071,13 @@
 				<!-- Add loading check before rendering table that depends on unitIconMap -->
 				{#if unitsDataLoaded && $unitIconMap}
 					<div class="relative {isFullScreen ? 'fullscreen-container' : ''}">
-						<div class="table-controls mb-2 flex justify-end">
+						<div
+							class="table-controls mb-2 flex justify-start"
+							style="background: transparent; box-shadow: none;"
+						>
 							<button
 								on:click={toggleFullScreen}
-								class="flex items-center gap-2 rounded-lg bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+								class="flex items-center gap-2 rounded-lg border border-white bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
 								aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
 							>
 								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1360,17 +1366,53 @@
 					<!-- Comparison Table -->
 					{#if selectedUnitsData.some((u) => u)}
 						<div
-							class="relative overflow-auto"
-							style="max-height: calc(100vh - 250px);"
+							class="relative overflow-auto {isFullScreen ? 'fullscreen-container' : ''}"
+							style={!isFullScreen ? 'max-height: calc(100vh - 250px); ' : 'max-height: 100%;'}
 							on:mouseenter={handleTableHover}
 							role="region"
 						>
-							<table class="relative w-full border-collapse">
+							<table
+								class="relative w-full border-collapse {isFullScreen ? 'fullscreen-table' : ''}"
+							>
 								<thead>
 									<tr class="sticky top-0 z-20">
 										<th
 											class="sticky left-0 z-30 w-1/4 min-w-[200px] rounded-tl-lg bg-gray-800/95 p-4 text-left backdrop-blur-sm"
 										>
+											<div
+												class="table-controls flex justify-start"
+												style="background: transparent; box-shadow: none; position: absolute; top: 0; left: 0; z-index: 70;"
+											>
+												<button
+													on:click={toggleFullScreen}
+													class="flex items-center gap-2 rounded-lg border border-white bg-gray-800/80 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+													aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+												>
+													<svg
+														class="h-4 w-4"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														{#if isFullScreen}
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M9 9L4 4m0 0l5 0m-5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0 -5M15 9l5 -5m0 0l-5 0m5 0l0 5M15 15l5 5m0 0l-5 0m5 0l0 -5"
+															/>
+														{:else}
+															<path
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																stroke-width="2"
+																d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"
+															/>
+														{/if}
+													</svg>
+													{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+												</button>
+											</div>
 											Property
 										</th>
 										{#each selectedUnitsData as unit, i}
@@ -1599,19 +1641,15 @@
 											{/if}
 											<!-- Properties in this category -->
 											{#each props as prop}
-												<!-- Use unit.data for object expansion, unit[prop] for direct display -->
 												{@const values = selectedUnitsData.map((u) =>
 													u
-														? typeof u.data?.[prop] === 'object'
-															? u.data[prop]
-															: u[prop]
+														? u[prop] !== undefined && u[prop] !== null
+															? u[prop]
+															: u.data?.[prop]
 														: undefined
 												)}
-												{@const displayValues = selectedUnitsData.map((u) =>
-													u ? u[prop] : undefined
-												)}
-												{@const allSame = displayValues.every(
-													(v) => JSON.stringify(v) === JSON.stringify(displayValues[0])
+												{@const allSame = values.every(
+													(v) => JSON.stringify(v) === JSON.stringify(values[0])
 												)}
 												<tr class="transition-colors hover:bg-gray-800/30">
 													<td
@@ -1633,7 +1671,111 @@
 																		class="bg-gray-850/50 space-y-1 overflow-y-auto rounded-md p-2"
 																		style="max-height: 32rem;"
 																	>
-																		<RecursiveObjectDisplay data={value} />
+																		{#if prop === 'buildoptions'}
+																			{#if typeof value === 'object' && value !== null && Object.keys(value).length > 0}
+																				<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+																					{#each Object.entries(value) as [boIndex, buildableUnitId]}
+																						{@const buildableUnitInfo =
+																							$unitsData?.[buildableUnitId] || {}}
+																						{@const buildableUnitData =
+																							buildableUnitInfo?.data?.[buildableUnitId] || {}}
+																						{@const buildableUnitName =
+																							$unitNamesDetails?.units?.names?.[buildableUnitId] ||
+																							buildableUnitId}
+																						{@const buildableUnitTech =
+																							buildableUnitInfo?.tech_level || 1}
+																						{@const buildableUnitFaction =
+																							buildableUnitInfo?.faction}
+																						{@const buildableUnitType = buildableUnitInfo?.type}
+																						<a
+																							href="{base}/unit?name={buildableUnitId}"
+																							class="block rounded-lg bg-gray-800/70 p-3 transition-all hover:bg-gray-700/70 hover:shadow-md"
+																						>
+																							<div class="flex items-center justify-between">
+																								<span class="font-semibold text-teal-400"
+																									>{buildableUnitName}</span
+																								>
+																								<span
+																									class="rounded bg-blue-500/20 px-1.5 py-0.5 text-xs font-medium text-blue-400"
+																								>
+																									T{buildableUnitTech}
+																								</span>
+																							</div>
+																							<div class="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+																								{#if buildableUnitFaction}
+																									<span
+																										class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300"
+																									>
+																										{buildableUnitFaction === 'arm' ? 'ARM' : 'COR'}
+																									</span>
+																								{/if}
+																								{#if buildableUnitType && buildableUnitType !== 'other'}
+																									<span
+																										class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-300"
+																									>
+																										{buildableUnitType}
+																									</span>
+																								{/if}
+																							</div>
+																							{#if buildableUnitData && Object.keys(buildableUnitData).length > 0}
+																								<div
+																									class="mt-2 grid grid-cols-3 gap-2 border-t border-gray-700/50 pt-2 text-xs"
+																								>
+																									<div
+																										class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																									>
+																										<span class="text-gray-400">HP</span>
+																										<span class="font-medium text-red-400">
+																											{formatValueWithContext(
+																												getUnitHealth(
+																													buildableUnitData,
+																													buildableUnitId
+																												),
+																												'maxdamage'
+																											)}
+																										</span>
+																									</div>
+																									<div
+																										class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																									>
+																										<span class="text-gray-400">Metal</span>
+																										<span class="font-medium text-blue-400">
+																											{formatValueWithContext(
+																												getUnitMetal(
+																													buildableUnitData,
+																													buildableUnitId
+																												),
+																												'buildcostmetal'
+																											)}
+																										</span>
+																									</div>
+																									<div
+																										class="flex flex-col items-center rounded bg-gray-700/50 p-1.5"
+																									>
+																										<span class="text-gray-400">Time</span>
+																										<span class="font-medium text-green-400">
+																											{formatValueWithContext(
+																												buildableUnitData.buildtime,
+																												'buildtime'
+																											)}
+																										</span>
+																									</div>
+																								</div>
+																							{/if}
+																						</a>
+																					{/each}
+																				</div>
+																			{:else}
+																				<span class="text-gray-500">—</span>
+																			{/if}
+																		{:else}
+																			<div
+																				class="bg-gray-850/50 mt-2 space-y-1 overflow-y-auto rounded-md p-2"
+																				style="max-height: 250px;"
+																			>
+																				<RecursiveObjectDisplay data={value} />
+																			</div>
+																		{/if}
 																	</div>
 																	<button
 																		class="mt-2 text-xs text-teal-400 hover:text-teal-300"
@@ -1660,8 +1802,7 @@
 																	</button>
 																{/if}
 															{:else}
-																<!-- Use displayValues[i] here for the formatted value -->
-																{formatValueWithContext(displayValues[i], prop)}
+																{formatValueWithContext(value, prop)}
 															{/if}
 														</td>
 													{/each}
@@ -1711,18 +1852,17 @@
 		background-color: rgb(17, 24, 39);
 		padding: 1rem;
 		overflow: auto;
+		display: flex;
+		flex-direction: column;
 	}
-
 	.fullscreen-table {
-		height: calc(100vh - 3rem); /* Account for the button height */
+		height: 100%;
+		min-height: 0;
+		width: 100%;
 		overflow: auto;
+		display: block;
 	}
-
-	.fullscreen-container .table-controls {
-		position: sticky;
-		top: 0;
-		z-index: 60;
-		padding: 0.5rem 0;
-		background-color: rgb(17, 24, 39);
+	.fullscreen-container > .fullscreen-table {
+		flex: 1 1 0%;
 	}
 </style>
