@@ -95,24 +95,8 @@ export function processWeapons(weapondefs) {
  * @returns {Object|null} - Object with totalDps, totalParalyzeDps and maxRange, or null if no weapons
  */
 export function getUnitCombatStats(weaponsProcessed, unitDataSource, unitId) {
-	console.log(
-		`[getUnitCombatStats for ${unitId}] Received processed weapons array (weaponsProcessed):`,
-		weaponsProcessed ? JSON.parse(JSON.stringify(weaponsProcessed)) : undefined
-	);
-	console.log(
-		`[getUnitCombatStats for ${unitId}] Received unitDataSource.weapons (slots):`,
-		unitDataSource?.weapons ? JSON.parse(JSON.stringify(unitDataSource.weapons)) : undefined
-	);
-	console.log(
-		`[getUnitCombatStats for ${unitId}] Received unitDataSource.weapondefs:`,
-		unitDataSource?.weapondefs ? JSON.parse(JSON.stringify(unitDataSource.weapondefs)) : undefined
-	);
-
 	if (!weaponsProcessed?.length) {
 		// If no weapon definitions were processed at all
-		console.log(
-			`[getUnitCombatStats for ${unitId}] No processed weapon definitions, returning null.`
-		);
 		return null;
 	}
 
@@ -145,7 +129,6 @@ export function getUnitCombatStats(weaponsProcessed, unitDataSource, unitId) {
 		Object.keys(unitDataSource.weapons).length > 0 &&
 		weaponsProcessed.length > 0
 	) {
-		console.log(`[getUnitCombatStats for ${unitId}] Phase 1: Processing ALL weapon slots.`);
 		for (const slotKey in unitDataSource.weapons) {
 			const weaponSlot = unitDataSource.weapons[slotKey];
 			if (weaponSlot && weaponSlot.def) {
@@ -182,15 +165,9 @@ export function getUnitCombatStats(weaponsProcessed, unitDataSource, unitId) {
 	// Phase 2: Add DPS for weapon definitions in weapondefs that were NOT in ANY slot.
 	// Also, ensure maxRange considers all weapon definitions from weaponsProcessed.
 	if (weaponsProcessed.length > 0) {
-		console.log(
-			`[getUnitCombatStats for ${unitId}] Phase 2: Checking for unslotted weapon definitions and finalizing max range.`
-		);
 		weaponsProcessed.forEach((pWeapon) => {
 			// If this processed weapon definition was NOT used by ANY slot, add its DPS once.
 			if (!accountedForDefKeysInAtLeastOneSlot.has(pWeapon.originalDefKey)) {
-				console.log(
-					`[getUnitCombatStats for ${unitId}]     Adding DPS for unslotted definition: ${pWeapon.originalDefKey} (DPS: ${pWeapon.dps})`
-				);
 				calculatedTotalDps += Number(pWeapon.dps || 0);
 				calculatedTotalParalyzeDps += Number(pWeapon.paralyzeDps || 0);
 			}
