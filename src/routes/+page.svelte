@@ -22,12 +22,38 @@
 		});
 
 		factionsData = $factionsList.reduce((acc, faction) => {
+			let description = '';
+			switch (faction) {
+				case 'arm':
+					description =
+						'The Armada - Agile and adaptable forces specializing in hit-and-run tactics and economic efficiency. Masters of terrain manipulation and rapid deployment.';
+					break;
+				case 'cor':
+					description =
+						'The Cortex - Heavily armored juggernauts with superior firepower and defensive capabilities. Experts in siege warfare and sustained engagements.';
+					break;
+				case 'legion':
+					description =
+						'The Legion - Elite, highly specialized units with advanced technology and powerful defenses. Known for their adaptability and strategic depth.';
+					break;
+				case 'raptor':
+					description =
+						'The Raptors - Fast, aggressive, and highly mobile units, designed for quick assaults and overwhelming enemy positions through superior speed.';
+					break;
+				case 'scavengers':
+					description =
+						'The Scavengers - Adaptive and unpredictable, using unconventional tactics and salvaged technology to overwhelm their foes.';
+					break;
+				default:
+					description = 'Unknown faction.';
+			}
+			const displayName =
+				$unitNamesDetails?.units?.factions?.[faction]?.charAt(0).toUpperCase() +
+					$unitNamesDetails?.units?.factions?.[faction]?.slice(1) ||
+				faction.charAt(0).toUpperCase() + faction.slice(1);
 			acc[faction] = {
-				name: $unitNamesDetails.units.factions[faction],
-				description:
-					faction === 'arm'
-						? 'The Armada - Agile and adaptable forces specializing in hit-and-run tactics and economic efficiency. Masters of terrain manipulation and rapid deployment.'
-						: 'The Cortex - Heavily armored juggernauts with superior firepower and defensive capabilities. Experts in siege warfare and sustained engagements.'
+				name: displayName,
+				description
 			};
 			return acc;
 		}, {});

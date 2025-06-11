@@ -334,6 +334,26 @@ def parse_units_folder(folder: Path, path: List[str] = []) -> Dict[str, Dict]:
                         unit_type = path[0][3:].lower()
                         if len(path) > 1 and not is_tier_folder(path[1]):
                             unit_subtype = format_subtype(path[1])
+                    # Added logic for Legion and Scavengers
+                    elif path[0] == "Legion":
+                        faction = "legion"
+                        if len(path) > 1:
+                            unit_type = path[1].lower()
+                            if len(path) > 2 and not is_tier_folder(path[2]):
+                                unit_subtype = format_subtype(path[2])
+                    elif path[0] == "Scavengers":
+                        faction = "scavengers"
+                        if len(path) > 1:
+                            unit_type = path[1].lower()
+                            if len(path) > 2 and not is_tier_folder(path[2]):
+                                unit_subtype = format_subtype(path[2])
+                    # Added logic for Raptors
+                    elif len(path) > 1 and path[0] == "other" and path[1] == "raptors":
+                        faction = "raptor"
+                        if len(path) > 2:
+                            unit_type = path[2].lower()
+                            if len(path) > 3 and not is_tier_folder(path[3]):
+                                unit_subtype = format_subtype(path[3])
 
                 # Extract tech level if available
                 if (
