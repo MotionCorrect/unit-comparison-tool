@@ -12,6 +12,7 @@
 		isMineUnit
 	} from '$lib/dpsCalculations';
 	import { getDisplayName, formatValueWithContext } from '$lib/propertyDisplay';
+	import { factionsList } from '$lib/data';
 	// View mode state
 	let viewMode = 'browse'; // 'compare' or 'browse'
 
@@ -954,8 +955,13 @@
 							class="w-full rounded-lg bg-gray-900 px-3 py-2 text-gray-200"
 						>
 							<option value="all">All Factions</option>
-							<option value="arm">Armada</option>
-							<option value="cor">Cortex</option>
+							{#if $factionsList && $unitNamesDetails}
+								{#each $factionsList as faction}
+									<option value={faction}
+										>{$unitNamesDetails.units.factions[faction] || faction}</option
+									>
+								{/each}
+							{/if}
 						</select>
 					</div>
 				</div>
@@ -1245,7 +1251,7 @@
 														</div>
 														<div class="flex h-6 items-center gap-2">
 															<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
-																{unit.faction === 'arm' ? 'ARM' : 'COR'}
+																{$unitNamesDetails?.units?.factions?.[unit.faction] || unit.faction}
 															</span>
 															<span
 																class="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-400"
@@ -1338,7 +1344,7 @@
 										{#each unitsList as unit}
 											<option value={unit.id} class="flex items-center gap-2">
 												{unit.name}
-												[{unit.faction === 'arm' ? 'ARM' : 'COR'}] [{unit.type}
+												[{$unitNamesDetails?.units?.factions?.[unit.faction] || unit.faction}] [{unit.type}
 												{unit.subtype !== 'none' ? `/${unit.subtype}` : ''}] [T{unit.tech}]
 											</option>
 										{/each}
@@ -1460,7 +1466,8 @@
 															{/if}
 															<div class="flex justify-center gap-2 text-sm">
 																<span class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-400">
-																	{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
+																	{$unitNamesDetails?.units?.factions?.[unit.faction] ||
+																		unit.faction}
 																</span>
 																<span
 																	class="rounded-full bg-purple-500/20 px-2 py-0.5 text-purple-400"
@@ -1706,7 +1713,16 @@
 																									<span
 																										class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300"
 																									>
-																										{buildableUnitFaction === 'arm' ? 'ARM' : 'COR'}
+																										{$unitNamesDetails?.units?.factions?.[
+																											buildableUnitFaction
+																										]
+																											?.charAt(0)
+																											.toUpperCase() +
+																											$unitNamesDetails?.units?.factions?.[
+																												buildableUnitFaction
+																											]?.slice(1) ||
+																											buildableUnitFaction.charAt(0).toUpperCase() +
+																												buildableUnitFaction.slice(1)}
 																									</span>
 																								{/if}
 																								{#if buildableUnitType && buildableUnitType !== 'other'}

@@ -61,7 +61,9 @@
 	</div>
 
 	<div class="fixed inset-0 -z-10 overflow-hidden opacity-20">
-		<div class="absolute inset-0 bg-[url('/unitpics_webp/armflea.webp')] bg-repeat opacity-5"></div>
+		<div
+			class="absolute inset-0 bg-[url('/unitpics_webp/arms/armflea.webp')] bg-repeat opacity-5"
+		></div>
 		{#each Array(20) as _, i}
 			<div
 				class="absolute h-40 w-40 transform bg-contain bg-no-repeat rotate-{Math.random() * 360}deg"
@@ -69,9 +71,13 @@
 					left: {Math.random() * 100}vw; 
 					top: {Math.random() * 100}vh;
 					opacity: {Math.random() * 0.2 + 0.05};
-					background-image: url('{base}/unitpics_webp/{['armflea', 'corak', 'armvader', 'corroach'][
-					Math.floor(Math.random() * 4)
-				]}.webp');
+					background-image: url('{base}/unitpics_webp/{[
+					'arms/armflea',
+					'cors/corak',
+					'bots/legion_wasp',
+					'vehicles/scav_raider',
+					'air/raptor_fighter'
+				][Math.floor(Math.random() * 5)]}.webp');
 				"
 			></div>
 		{/each}

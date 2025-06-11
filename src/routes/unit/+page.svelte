@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { loadData, unitsData, unitNamesDetails, unitIconMap } from '$lib/data';
+	import { loadData, unitsData, unitNamesDetails, unitIconMap, factionsList } from '$lib/data';
 	import { slide } from 'svelte/transition';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import RecursiveObjectDisplay from '$lib/components/RecursiveObjectDisplay.svelte';
@@ -435,6 +435,29 @@
 <div class="min-h-screen bg-gray-900 text-gray-100">
 	<Navbar />
 	<div class="container mx-auto max-w-7xl px-4 py-8">
+		<div class="mb-8 flex justify-center gap-4">
+			{#if $factionsList && $unitNamesDetails}
+				{#each $factionsList as faction}
+					<button
+						class:bg-teal-600={unit && unit.faction === faction}
+						class="rounded-lg bg-gray-700/50 px-6 py-3 font-medium transition-all hover:bg-teal-600/80"
+						on:click={() => {
+							// Try to find the same unit name in the selected faction
+							const targetUnit = Object.values($unitsData).find(
+								(u) => u.faction === faction && u.name === unit.name
+							);
+							if (targetUnit) {
+								window.location.href = `${base}/unit?name=${targetUnit.name}`;
+							}
+						}}
+					>
+						{$unitNamesDetails?.units?.factions?.[faction]?.charAt(0).toUpperCase() +
+							$unitNamesDetails?.units?.factions?.[faction]?.slice(1) ||
+							faction.charAt(0).toUpperCase() + faction.slice(1)}
+					</button>
+				{/each}
+			{/if}
+		</div>
 		{#if unit && unitData}
 			<div class="space-y-8">
 				<header class="mb-8">
@@ -473,7 +496,9 @@
 								<span
 									class="rounded-full bg-teal-500/20 px-3 py-1 text-sm font-medium text-teal-400"
 								>
-									{unit.faction === 'arm' ? 'Armada' : 'Cortex'}
+									{$unitNamesDetails?.units?.factions?.[unit.faction]?.charAt(0).toUpperCase() +
+										$unitNamesDetails?.units?.factions?.[unit.faction]?.slice(1) ||
+										unit.faction.charAt(0).toUpperCase() + unit.faction.slice(1)}
 								</span>
 								<span
 									class="rounded-full bg-orange-500/20 px-3 py-1 text-sm font-medium text-orange-400"
@@ -655,7 +680,16 @@
 																				<span
 																					class="rounded-full bg-teal-500/20 px-2 py-0.5 text-teal-300"
 																				>
-																					{buildableUnitFaction === 'arm' ? 'ARM' : 'COR'}
+																					{$unitNamesDetails?.units?.factions?.[
+																						buildableUnitFaction
+																					]
+																						?.charAt(0)
+																						.toUpperCase() +
+																						$unitNamesDetails?.units?.factions?.[
+																							buildableUnitFaction
+																						]?.slice(1) ||
+																						buildableUnitFaction.charAt(0).toUpperCase() +
+																							buildableUnitFaction.slice(1)}
 																				</span>
 																			{/if}
 																			{#if buildableUnitType && buildableUnitType !== 'other'}

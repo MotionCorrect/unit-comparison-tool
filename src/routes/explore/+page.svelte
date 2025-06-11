@@ -6,7 +6,8 @@
 		unitNamesDetails,
 		unitsByFactionTypeTech,
 		unitsData,
-		unitIconMap
+		unitIconMap,
+		factionsList
 	} from '$lib/data';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { base } from '$app/paths';
@@ -34,6 +35,9 @@
 	// Add at top of script
 	let currentHoveredNodeId = null;
 
+	let tickCount = 0;
+	const MAX_TICKS = 300;
+
 	onMount(async () => {
 		await loadData();
 		dataLoaded = true;
@@ -57,7 +61,7 @@
 		nodes.push({
 			id: selectedFaction,
 			group: 'faction',
-			name: $unitNamesDetails.units.factions[selectedFaction] || selectedFaction
+			name: $unitNamesDetails?.units?.factions?.[selectedFaction] || selectedFaction
 		});
 
 		// Add type nodes and connect to faction
@@ -186,7 +190,7 @@
 			content = `
 				<div class="p-4 bg-gray-900/95 rounded-lg shadow-xl">
 					<div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-700">
-						<h3 class="text-xl font-semibold text-white">${d.name}</h3>
+						<h3 class="text-xl font-semibold text-white">${$unitNamesDetails?.units?.factions?.[d.id]?.charAt(0).toUpperCase() + $unitNamesDetails?.units?.factions?.[d.id]?.slice(1) || d.name.charAt(0).toUpperCase() + d.name.slice(1)}</h3>
 						<span class="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full uppercase tracking-wide">${d.group}</span>
 					</div>
 					<div class="space-y-4">
@@ -289,12 +293,12 @@
 			const path = d.id.split('-');
 			const imagePath = getUnitImagePath(d.dbName);
 			const imageHtml = imagePath
-				? `<div class="mb-4 flex justify-center"><img src="${imagePath}" alt="${d.name}" class="max-w-[150px] max-h-[150px] object-contain rounded border border-gray-700"></div>`
+				? `<div class="mb-4 flex justify-center"><img src="${imagePath}" alt="${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName}" class="max-w-[150px] max-h-[150px] object-contain rounded border border-gray-700"></div>`
 				: ''; // Empty string if no image
 
 			const iconPath = getUnitIconPath(d.dbName); // Get icon path
 			const iconHtml = iconPath // Generate icon HTML if path exists
-				? `<div class="mt-2 flex justify-center"><img src="${iconPath}" alt="${d.name} icon" class="max-w-[48px] max-h-[48px] object-contain"></div>`
+				? `<div class="mt-2 flex justify-center"><img src="${iconPath}" alt="${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName} icon" class="max-w-[48px] max-h-[48px] object-contain"></div>`
 				: '';
 
 			content = `
@@ -302,7 +306,7 @@
 					${imageHtml}
 					${iconHtml}
 					<div class="flex items-center justify-between mt-2 mb-4 pb-3 border-b border-gray-700">
-						<a href="${base}/unit?name=${d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${d.name}</a>
+						<a href="${base}/unit?name=${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName}" class="text-xl font-semibold text-white hover:text-teal-400 transition-colors">${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName}</a>
 						<span class="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full uppercase tracking-wide">${d.group}</span>
 					</div>
 					<div class="space-y-4">
@@ -319,7 +323,7 @@
 							<span class="text-gray-400">Tech Level</span>
 							<span class="text-white font-medium">${d.tech}</span>
 						</div>
-						<a href="${base}/unit?name=${d.dbName}" 
+						<a href="${base}/unit?name=${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName}" 
 							class="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium text-center">
 							View Unit Details
 						</a>
@@ -471,16 +475,16 @@
 					.forceLink(links)
 					.id((d) => d.id)
 					.distance((d) => calculateLinkDistance(d.source, d.target))
-					.strength(1)
-					.iterations(15)
+					.strength(0.4)
+					.iterations(10)
 			)
 			.force('charge', d3.forceManyBody().strength(-500))
-			.force('center', d3.forceCenter(width / 2, height / 2).strength(0.1))
-			.force('collide', d3.forceCollide(15).strength(0.5))
-			.alphaTarget(0.4)
+			.force('center', d3.forceCenter(width / 2, height / 2).strength(0.2))
+			.force('collide', d3.forceCollide(22).strength(0.7))
+			.alphaTarget(0.3)
 			.alphaMin(0.001)
-			.alphaDecay(0.02)
-			.velocityDecay(0.5);
+			.alphaDecay(0.000001)
+			.velocityDecay(0.6);
 
 		currentSimulation = simulation;
 
@@ -537,7 +541,12 @@
 			.each(function (d) {
 				if (d.group === 'unit') {
 					const parent = d3.select(this);
-					const link = parent.append('a').attr('href', `${base}/unit?name=${d.dbName}`);
+					const link = parent
+						.append('a')
+						.attr(
+							'href',
+							`${base}/unit?name=${$unitNamesDetails?.units?.factions?.[d.dbName] || d.dbName}`
+						);
 					link.node().appendChild(this.firstChild);
 				}
 			})
@@ -603,6 +612,17 @@
 				.attr('y2', (d) => d.target.y);
 
 			node.attr('x', (d) => d.x).attr('y', (d) => d.y);
+
+			tickCount++;
+			if (tickCount > MAX_TICKS) {
+				simulation.stop();
+				simulation.alphaTarget(0);
+				// Optionally, fix node positions
+				nodes.forEach((n) => {
+					n.fx = n.x;
+					n.fy = n.y;
+				});
+			}
 		});
 
 		// Add tooltip hover handlers
@@ -647,6 +667,24 @@
 			event.subject.fx = null;
 			event.subject.fy = null;
 		}
+
+		// After simulation ends, recenter if nodes are out of bounds
+		simulation.on('end', () => {
+			const minX = d3.min(nodes, (d) => d.x);
+			const maxX = d3.max(nodes, (d) => d.x);
+			const minY = d3.min(nodes, (d) => d.y);
+			const maxY = d3.max(nodes, (d) => d.y);
+			const dx = (minX + maxX) / 2 - width / 2;
+			const dy = (minY + maxY) / 2 - height / 2;
+			nodes.forEach((d) => {
+				d.x -= dx;
+				d.y -= dy;
+			});
+			d3.select(graphContainer)
+				.select('svg')
+				.select('g')
+				.attr('transform', `translate(${-dx},${-dy})`);
+		});
 
 		// When this cell is re-run, stop the previous simulation. (This doesn't
 		// really matter since the target alpha is zero and the simulation will
@@ -788,20 +826,33 @@
 			</div>
 
 			<div class="mb-8 flex justify-center gap-4">
-				<button
-					class:bg-teal-600={selectedFaction === 'arm'}
-					class="rounded-lg bg-gray-700/50 px-6 py-3 font-medium transition-all hover:bg-teal-600/80"
-					on:click={() => (selectedFaction = 'arm')}
-				>
-					Armada
-				</button>
-				<button
-					class:bg-teal-600={selectedFaction === 'cor'}
-					class="rounded-lg bg-gray-700/50 px-6 py-3 font-medium transition-all hover:bg-teal-600/80"
-					on:click={() => (selectedFaction = 'cor')}
-				>
-					Cortex
-				</button>
+				{#if $factionsList && $unitNamesDetails}
+					{#each $factionsList as faction}
+						<button
+							class:bg-teal-600={selectedFaction === faction}
+							class="rounded-lg bg-gray-700/50 px-6 py-3 font-medium transition-all hover:bg-teal-600/80"
+							on:click={() => {
+								if (selectedFaction !== faction) {
+									selectedFaction = faction;
+									// Reset simulation state
+									tickCount = 0;
+									if (nodes)
+										nodes.forEach((n) => {
+											n.fx = null;
+											n.fy = null;
+										});
+									if (simulation) {
+										simulation.alpha(1).restart();
+									}
+								}
+							}}
+						>
+							{$unitNamesDetails?.units?.factions?.[faction]?.charAt(0).toUpperCase() +
+								$unitNamesDetails?.units?.factions?.[faction]?.slice(1) ||
+								faction.charAt(0).toUpperCase() + faction.slice(1)}
+						</button>
+					{/each}
+				{/if}
 			</div>
 		</section>
 		<div class="graph-wrapper">

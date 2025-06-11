@@ -755,6 +755,9 @@
 						"name": "armcomcon"
 					},
 					{
+						"name": "armcomnew"
+					},
+					{
 						"name": "corassistdrone"
 					},
 					{
@@ -771,333 +774,6 @@
 					},
 					{
 						"name": "legassistdrone_land"
-					},
-					{
-						"name": "legatrans"
-					},
-					{
-						"name": "legcib"
-					},
-					{
-						"name": "legdrone"
-					},
-					{
-						"name": "legfig"
-					},
-					{
-						"name": "legkam"
-					},
-					{
-						"name": "leglts"
-					},
-					{
-						"name": "legmos"
-					},
-					{
-						"name": "legheavydrone"
-					},
-					{
-						"name": "legmineb"
-					},
-					{
-						"name": "legbal"
-					},
-					{
-						"name": "legcen"
-					},
-					{
-						"name": "leggob"
-					},
-					{
-						"name": "legkark"
-					},
-					{
-						"name": "leglob"
-					},
-					{
-						"name": "legca"
-					},
-					{
-						"name": "legch"
-					},
-					{
-						"name": "legck"
-					},
-					{
-						"name": "legcs"
-					},
-					{
-						"name": "legcv"
-					},
-					{
-						"name": "legotter"
-					},
-					{
-						"name": "legacluster"
-					},
-					{
-						"name": "legcluster"
-					},
-					{
-						"name": "legdrag"
-					},
-					{
-						"name": "legdtr"
-					},
-					{
-						"name": "legforti"
-					},
-					{
-						"name": "leghive"
-					},
-					{
-						"name": "leglht"
-					},
-					{
-						"name": "leglupara"
-					},
-					{
-						"name": "legmg"
-					},
-					{
-						"name": "legrhapsis"
-					},
-					{
-						"name": "legrl"
-					},
-					{
-						"name": "legadvsol"
-					},
-					{
-						"name": "legeconv"
-					},
-					{
-						"name": "legestor"
-					},
-					{
-						"name": "leggeo"
-					},
-					{
-						"name": "legmex"
-					},
-					{
-						"name": "legmext15"
-					},
-					{
-						"name": "legmohobpct"
-					},
-					{
-						"name": "legmstor"
-					},
-					{
-						"name": "legsolar"
-					},
-					{
-						"name": "legwin"
-					},
-					{
-						"name": "legah"
-					},
-					{
-						"name": "legcar"
-					},
-					{
-						"name": "legmh"
-					},
-					{
-						"name": "legner"
-					},
-					{
-						"name": "legsh"
-					},
-					{
-						"name": "legamsub"
-					},
-					{
-						"name": "legap"
-					},
-					{
-						"name": "legfhp"
-					},
-					{
-						"name": "leghp"
-					},
-					{
-						"name": "legjim"
-					},
-					{
-						"name": "leglab"
-					},
-					{
-						"name": "legvp"
-					},
-					{
-						"name": "legcom"
-					},
-					{
-						"name": "legcombabyunits"
-					},
-					{
-						"name": "legcomlvl10"
-					},
-					{
-						"name": "legcomlvl2"
-					},
-					{
-						"name": "legcomlvl3"
-					},
-					{
-						"name": "legcomlvl4"
-					},
-					{
-						"name": "legcomlvl5"
-					},
-					{
-						"name": "legcomlvl6"
-					},
-					{
-						"name": "legcomlvl7"
-					},
-					{
-						"name": "legcomlvl8"
-					},
-					{
-						"name": "legcomlvl9"
-					},
-					{
-						"name": "legevodecom"
-					},
-					{
-						"name": "legcomecon"
-					},
-					{
-						"name": "legcomoff"
-					},
-					{
-						"name": "legcomt2com"
-					},
-					{
-						"name": "legcomt2def"
-					},
-					{
-						"name": "legcomt2off"
-					},
-					{
-						"name": "legvision"
-					},
-					{
-						"name": "legfmkr"
-					},
-					{
-						"name": "legtide"
-					},
-					{
-						"name": "legctl"
-					},
-					{
-						"name": "legfhive"
-					},
-					{
-						"name": "legfmg"
-					},
-					{
-						"name": "legfrl"
-					},
-					{
-						"name": "legptl_deprecated"
-					},
-					{
-						"name": "legtl"
-					},
-					{
-						"name": "legtl_deprecated"
-					},
-					{
-						"name": "legfrad"
-					},
-					{
-						"name": "leghastatus"
-					},
-					{
-						"name": "leghastatusalt"
-					},
-					{
-						"name": "legpontus"
-					},
-					{
-						"name": "legportent"
-					},
-					{
-						"name": "legstingray"
-					},
-					{
-						"name": "legtriarius"
-					},
-					{
-						"name": "legtriariusdrone"
-					},
-					{
-						"name": "legtriariusheatray"
-					},
-					{
-						"name": "legvelite"
-					},
-					{
-						"name": "cornanotc2plat"
-					},
-					{
-						"name": "legeyes"
-					},
-					{
-						"name": "legjam"
-					},
-					{
-						"name": "legmine1"
-					},
-					{
-						"name": "legmine2"
-					},
-					{
-						"name": "legmine3"
-					},
-					{
-						"name": "legnanotc"
-					},
-					{
-						"name": "legnanotcplat"
-					},
-					{
-						"name": "legnanotct2"
-					},
-					{
-						"name": "legrad"
-					},
-					{
-						"name": "legamphtank"
-					},
-					{
-						"name": "legbar"
-					},
-					{
-						"name": "leggat"
-					},
-					{
-						"name": "leghades"
-					},
-					{
-						"name": "leghelios"
-					},
-					{
-						"name": "legmlv"
-					},
-					{
-						"name": "legrail"
-					},
-					{
-						"name": "legscout"
-					},
-					{
-						"name": "legvcarry"
 					},
 					{
 						"name": "armrespawn"
@@ -1262,363 +938,6 @@
 						"name": "pbr_cube"
 					},
 					{
-						"name": "raptor_air_bomber_acid_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_acid_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_acid_t4_v1"
-					},
-					{
-						"name": "raptor_allterrain_assault_acid_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_acid_t2_v1"
-					},
-					{
-						"name": "raptor_land_assault_acid_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_acids_t2_v1"
-					},
-					{
-						"name": "raptorartillery"
-					},
-					{
-						"name": "raptor_allterrain_arty_basic_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_basic_t4_v1"
-					},
-					{
-						"name": "raptor_allterrain_assault_basic_t4_v1"
-					},
-					{
-						"name": "raptor_allterrain_assault_basic_t4_v2"
-					},
-					{
-						"name": "raptor_land_assault_basic_t4_v1"
-					},
-					{
-						"name": "raptor_land_assault_basic_t4_v2"
-					},
-					{
-						"name": "raptor_allterrain_assault_basic_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_assault_basic_t2_v2"
-					},
-					{
-						"name": "raptor_allterrain_assault_basic_t2_v3"
-					},
-					{
-						"name": "raptor_land_assault_basic_t2_v1"
-					},
-					{
-						"name": "raptor_land_assault_basic_t2_v2"
-					},
-					{
-						"name": "raptor_land_assault_basic_t2_v3"
-					},
-					{
-						"name": "raptor_air_bomber_basic_t1_v1"
-					},
-					{
-						"name": "raptor_air_bomber_basic_t2_v1"
-					},
-					{
-						"name": "raptor_air_bomber_basic_t2_v2"
-					},
-					{
-						"name": "raptor_air_bomber_basic_t4_v1"
-					},
-					{
-						"name": "raptor_air_bomber_basic_t4_v2"
-					},
-					{
-						"name": "raptor_air_bomber_brood_t4_v2"
-					},
-					{
-						"name": "raptor_air_bomber_brood_t4_v3"
-					},
-					{
-						"name": "raptor_air_bomber_brood_t4_v4"
-					},
-					{
-						"name": "raptor_allterrain_arty_brood_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_brood_t4_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_brood_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_brood_t3_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_brood_t4_v1"
-					},
-					{
-						"name": "raptor_air_bomber_emp_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_emp_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_arty_emp_t4_v1"
-					},
-					{
-						"name": "raptor_allterrain_assault_emp_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_emp_t2_v1"
-					},
-					{
-						"name": "raptor_land_assault_emp_t2_v1"
-					},
-					{
-						"name": "raptor_land_kamikaze_emp_t2_v1"
-					},
-					{
-						"name": "raptor_land_kamikaze_emp_t4_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_emp_t2_v1"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t1_v1"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t2_v1"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t2_v2"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t2_v3"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t2_v4"
-					},
-					{
-						"name": "raptor_air_fighter_basic_t4_v1"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_fire_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_fire_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_fire_t4_v1"
-					},
-					{
-						"name": "raptorh1b"
-					},
-					{
-						"name": "raptor_land_swarmer_heal_t1_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_heal_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_heal_t3_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_heal_t4_v1"
-					},
-					{
-						"name": "raptor_air_kamikaze_basic_t2_v1"
-					},
-					{
-						"name": "raptor_land_kamikaze_basic_t2_v1"
-					},
-					{
-						"name": "raptor_land_kamikaze_basic_t4_v1"
-					},
-					{
-						"name": "raptor_matriarch_acid"
-					},
-					{
-						"name": "raptor_matriarch_basic"
-					},
-					{
-						"name": "raptor_matriarch_electric"
-					},
-					{
-						"name": "raptor_matriarch_fire"
-					},
-					{
-						"name": "raptor_matriarch_healer"
-					},
-					{
-						"name": "raptor_matriarch_spectre"
-					},
-					{
-						"name": "raptorh5"
-					},
-					{
-						"name": "raptor_queen_easy"
-					},
-					{
-						"name": "raptor_queen_epic"
-					},
-					{
-						"name": "raptor_queen_hard"
-					},
-					{
-						"name": "raptor_queen_normal"
-					},
-					{
-						"name": "raptor_queen_veryeasy"
-					},
-					{
-						"name": "raptor_queen_veryhard"
-					},
-					{
-						"name": "raptor_air_gunship_acid_t2_v1"
-					},
-					{
-						"name": "raptor_air_gunship_antiair_t2_v1"
-					},
-					{
-						"name": "raptor_air_gunship_basic_t2_v1"
-					},
-					{
-						"name": "raptor_air_gunship_emp_t2_v1"
-					},
-					{
-						"name": "raptor_air_gunship_fire_t2_v1"
-					},
-					{
-						"name": "raptor_air_scout_basic_t2_v1"
-					},
-					{
-						"name": "raptor_air_scout_basic_t3_v1"
-					},
-					{
-						"name": "raptor_air_scout_basic_t4_v1"
-					},
-					{
-						"name": "raptor_land_assault_spectre_t2_v1"
-					},
-					{
-						"name": "raptor_land_assault_spectre_t4_v1"
-					},
-					{
-						"name": "raptor_land_spiker_spectre_t4_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_spectre_t3_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_spectre_t4_v1"
-					},
-					{
-						"name": "raptor_land_spiker_basic_t2_v1"
-					},
-					{
-						"name": "raptor_land_spiker_basic_t4_v1"
-					},
-					{
-						"name": "raptor_hive"
-					},
-					{
-						"name": "raptor_turret_acid_t2_v1"
-					},
-					{
-						"name": "raptor_turret_acid_t3_v1"
-					},
-					{
-						"name": "raptor_turret_acid_t4_v1"
-					},
-					{
-						"name": "raptor_turret_antiair_t2_v1"
-					},
-					{
-						"name": "raptor_turret_antiair_t3_v1"
-					},
-					{
-						"name": "raptor_turret_antiair_t4_v1"
-					},
-					{
-						"name": "raptor_turret_antinuke_t2_v1"
-					},
-					{
-						"name": "raptor_turret_antinuke_t3_v1"
-					},
-					{
-						"name": "raptor_turret_basic_t2_v1"
-					},
-					{
-						"name": "raptor_turret_basic_t3_v1"
-					},
-					{
-						"name": "raptor_turret_basic_t4_v1"
-					},
-					{
-						"name": "raptor_turret_burrow_t2_v1"
-					},
-					{
-						"name": "raptor_turret_emp_t2_v1"
-					},
-					{
-						"name": "raptor_turret_emp_t3_v1"
-					},
-					{
-						"name": "raptor_turret_emp_t4_v1"
-					},
-					{
-						"name": "raptor_turret_meteor_t4_v1"
-					},
-					{
-						"name": "raptor_worm_green"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t4_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t4_v2"
-					},
-					{
-						"name": "raptor_6legged_l"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_basic_t2_v1"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_basic_t3_v1"
-					},
-					{
-						"name": "raptor_allterrain_swarmer_basic_t4_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t1_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t2_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t2_v2"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t2_v3"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t2_v4"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t3_v1"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t3_v2"
-					},
-					{
-						"name": "raptor_land_swarmer_basic_t3_v3"
-					},
-					{
 						"name": "xmasball1_1"
 					},
 					{
@@ -1653,288 +972,9 @@
 					},
 					{
 						"name": "xmasball2_6"
-					},
-					{
-						"name": "armfify"
-					},
-					{
-						"name": "armminebomber"
-					},
-					{
-						"name": "cords"
-					},
-					{
-						"name": "legmost3"
-					},
-					{
-						"name": "armscavengerbossv2"
-					},
-					{
-						"name": "babyscavbossunits"
-					},
-					{
-						"name": "scavengerbossv4"
-					},
-					{
-						"name": "corakt4"
-					},
-					{
-						"name": "corkark"
-					},
-					{
-						"name": "leggobt3"
-					},
-					{
-						"name": "corscavdrag"
-					},
-					{
-						"name": "corscavdtf"
-					},
-					{
-						"name": "corscavdtl"
-					},
-					{
-						"name": "corscavdtm"
-					},
-					{
-						"name": "corscavfort"
-					},
-					{
-						"name": "legdtf"
-					},
-					{
-						"name": "legdtl"
-					},
-					{
-						"name": "legdtm"
-					},
-					{
-						"name": "scavbeacon_t1"
-					},
-					{
-						"name": "scavbeacon_t2"
-					},
-					{
-						"name": "scavbeacon_t3"
-					},
-					{
-						"name": "scavbeacon_t4"
-					},
-					{
-						"name": "scavsafeareabeacon"
-					},
-					{
-						"name": "scavempspawner"
-					},
-					{
-						"name": "scavengerdroppod"
-					},
-					{
-						"name": "scavengerdroppodfriendly"
-					},
-					{
-						"name": "scavmists"
-					},
-					{
-						"name": "scavtacnukespawner"
-					},
-					{
-						"name": "armzapper"
-					},
-					{
-						"name": "cortorch"
 					}
 				],
 				"2": [
-					{
-						"name": "legatorpbomber"
-					},
-					{
-						"name": "legfort"
-					},
-					{
-						"name": "legionnaire"
-					},
-					{
-						"name": "legnap"
-					},
-					{
-						"name": "legphoenix"
-					},
-					{
-						"name": "legstronghold"
-					},
-					{
-						"name": "legvenator"
-					},
-					{
-						"name": "legwhisper"
-					},
-					{
-						"name": "legamph"
-					},
-					{
-						"name": "legbart"
-					},
-					{
-						"name": "legdecom"
-					},
-					{
-						"name": "leginc"
-					},
-					{
-						"name": "leginfestor"
-					},
-					{
-						"name": "legshot"
-					},
-					{
-						"name": "legsnapper"
-					},
-					{
-						"name": "legsrail"
-					},
-					{
-						"name": "legstr"
-					},
-					{
-						"name": "legaca"
-					},
-					{
-						"name": "legaceb"
-					},
-					{
-						"name": "legack"
-					},
-					{
-						"name": "legacv"
-					},
-					{
-						"name": "legafcv"
-					},
-					{
-						"name": "legabm"
-					},
-					{
-						"name": "legbastion"
-					},
-					{
-						"name": "legbombard"
-					},
-					{
-						"name": "legflak"
-					},
-					{
-						"name": "leglraa"
-					},
-					{
-						"name": "leglrpc"
-					},
-					{
-						"name": "legperdition"
-					},
-					{
-						"name": "legsilo"
-					},
-					{
-						"name": "legstarfall"
-					},
-					{
-						"name": "legadveconv"
-					},
-					{
-						"name": "legadvestore"
-					},
-					{
-						"name": "legafus"
-					},
-					{
-						"name": "legageo"
-					},
-					{
-						"name": "legamstor"
-					},
-					{
-						"name": "legfus"
-					},
-					{
-						"name": "legmoho"
-					},
-					{
-						"name": "legmohobp"
-					},
-					{
-						"name": "legmohocon"
-					},
-					{
-						"name": "legmohoconct"
-					},
-					{
-						"name": "legmohoconin"
-					},
-					{
-						"name": "legrampart"
-					},
-					{
-						"name": "legaap"
-					},
-					{
-						"name": "legalab"
-					},
-					{
-						"name": "legavp"
-					},
-					{
-						"name": "legoptio"
-					},
-					{
-						"name": "legajam"
-					},
-					{
-						"name": "legarad"
-					},
-					{
-						"name": "legdeflector"
-					},
-					{
-						"name": "legsd"
-					},
-					{
-						"name": "legtarg"
-					},
-					{
-						"name": "legaheattank"
-					},
-					{
-						"name": "legamcluster"
-					},
-					{
-						"name": "legaskirmtank"
-					},
-					{
-						"name": "legavjam"
-					},
-					{
-						"name": "legavrad"
-					},
-					{
-						"name": "legavroc"
-					},
-					{
-						"name": "legfloat"
-					},
-					{
-						"name": "leginf"
-					},
-					{
-						"name": "legmed"
-					},
-					{
-						"name": "legmrv"
-					},
-					{
-						"name": "legvflak"
-					},
 					{
 						"name": "armsat"
 					},
@@ -1948,218 +988,7 @@
 						"name": "mission_command_tower"
 					},
 					{
-						"name": "raptor_antinuke"
-					},
-					{
 						"name": "resourcecheat"
-					},
-					{
-						"name": "corcrw"
-					},
-					{
-						"name": "cordeadeye"
-					},
-					{
-						"name": "cormandot4"
-					},
-					{
-						"name": "armbotrail"
-					},
-					{
-						"name": "armlwall"
-					},
-					{
-						"name": "armminivulc"
-					},
-					{
-						"name": "corhllllt"
-					},
-					{
-						"name": "corminibuzz"
-					},
-					{
-						"name": "cormwall"
-					},
-					{
-						"name": "legministarfall"
-					},
-					{
-						"name": "legrwall"
-					},
-					{
-						"name": "armwint2"
-					},
-					{
-						"name": "corwint2"
-					},
-					{
-						"name": "legwint2"
-					},
-					{
-						"name": "armptt2"
-					},
-					{
-						"name": "corforge"
-					},
-					{
-						"name": "corftiger"
-					},
-					{
-						"name": "corgatreap"
-					}
-				],
-				"3": [
-					{
-						"name": "leggatet3"
-					},
-					{
-						"name": "leggant"
-					},
-					{
-						"name": "leegmech"
-					},
-					{
-						"name": "legbunk"
-					},
-					{
-						"name": "legeheatraymech"
-					},
-					{
-						"name": "legelrpcmech"
-					},
-					{
-						"name": "legerailtank"
-					},
-					{
-						"name": "legeshotgunmech"
-					},
-					{
-						"name": "legjav"
-					},
-					{
-						"name": "legkeres"
-					},
-					{
-						"name": "armfepocht4"
-					},
-					{
-						"name": "armlichet4"
-					},
-					{
-						"name": "armthundt4"
-					},
-					{
-						"name": "corcrwt4"
-					},
-					{
-						"name": "cordronecarryair"
-					},
-					{
-						"name": "corfblackhyt4"
-					},
-					{
-						"name": "legfortt4"
-					},
-					{
-						"name": "armassimilator"
-					},
-					{
-						"name": "armlunchbox"
-					},
-					{
-						"name": "armmeatball"
-					},
-					{
-						"name": "armpwt4"
-					},
-					{
-						"name": "armsptkt4"
-					},
-					{
-						"name": "corkarganetht4"
-					},
-					{
-						"name": "corthermite"
-					},
-					{
-						"name": "legpede"
-					},
-					{
-						"name": "legsrailt4"
-					},
-					{
-						"name": "armannit3"
-					},
-					{
-						"name": "cordoomt3"
-					},
-					{
-						"name": "armafust3"
-					},
-					{
-						"name": "armmmkrt3"
-					},
-					{
-						"name": "corafust3"
-					},
-					{
-						"name": "cormmkrt3"
-					},
-					{
-						"name": "legadveconvt3"
-					},
-					{
-						"name": "legafust3"
-					},
-					{
-						"name": "armapt3"
-					},
-					{
-						"name": "corapt3"
-					},
-					{
-						"name": "legapt3"
-					},
-					{
-						"name": "armgatet3"
-					},
-					{
-						"name": "corgatet3"
-					},
-					{
-						"name": "armdecadet3"
-					},
-					{
-						"name": "armpshipt3"
-					},
-					{
-						"name": "armserpt3"
-					},
-					{
-						"name": "coresuppt3"
-					},
-					{
-						"name": "corslrpc"
-					},
-					{
-						"name": "armdronecarryland"
-					},
-					{
-						"name": "armrattet4"
-					},
-					{
-						"name": "armvadert4"
-					},
-					{
-						"name": "corgolt4"
-					}
-				],
-				"4": [
-					{
-						"name": "armcomboss"
-					},
-					{
-						"name": "corcomboss"
 					}
 				]
 			}
@@ -2905,6 +1734,1557 @@
 					},
 					{
 						"name": "corvroc"
+					}
+				]
+			}
+		}
+	},
+	"legion": {
+		"air": {
+			"none": {
+				"1": [
+					{
+						"name": "legatrans"
+					},
+					{
+						"name": "legcib"
+					},
+					{
+						"name": "legdrone"
+					},
+					{
+						"name": "legfig"
+					},
+					{
+						"name": "legkam"
+					},
+					{
+						"name": "leglts"
+					},
+					{
+						"name": "legmos"
+					}
+				]
+			},
+			"T2  Air": {
+				"2": [
+					{
+						"name": "legafigdef"
+					},
+					{
+						"name": "legatorpbomber"
+					},
+					{
+						"name": "legfort"
+					},
+					{
+						"name": "legionnaire"
+					},
+					{
+						"name": "legnap"
+					},
+					{
+						"name": "legphoenix"
+					},
+					{
+						"name": "legstronghold"
+					},
+					{
+						"name": "legvenator"
+					},
+					{
+						"name": "legwhisper"
+					}
+				],
+				"1": [
+					{
+						"name": "legheavydrone"
+					},
+					{
+						"name": "legmineb"
+					}
+				]
+			}
+		},
+		"bots": {
+			"none": {
+				"1": [
+					{
+						"name": "legaabot"
+					},
+					{
+						"name": "legbal"
+					},
+					{
+						"name": "legcen"
+					},
+					{
+						"name": "leggob"
+					},
+					{
+						"name": "legkark"
+					},
+					{
+						"name": "leglob"
+					},
+					{
+						"name": "legrezbot"
+					}
+				]
+			},
+			"T2  Bots": {
+				"2": [
+					{
+						"name": "legadvaabot"
+					},
+					{
+						"name": "legamph"
+					},
+					{
+						"name": "legbart"
+					},
+					{
+						"name": "legdecom"
+					},
+					{
+						"name": "leghrk"
+					},
+					{
+						"name": "leginc"
+					},
+					{
+						"name": "leginfestor"
+					},
+					{
+						"name": "legshot"
+					},
+					{
+						"name": "legsnapper"
+					},
+					{
+						"name": "legsrail"
+					},
+					{
+						"name": "legstr"
+					}
+				]
+			}
+		},
+		"constructors": {
+			"none": {
+				"2": [
+					{
+						"name": "legaca"
+					},
+					{
+						"name": "legaceb"
+					},
+					{
+						"name": "legack"
+					},
+					{
+						"name": "legacv"
+					},
+					{
+						"name": "legafcv"
+					}
+				],
+				"1": [
+					{
+						"name": "legca"
+					},
+					{
+						"name": "legch"
+					},
+					{
+						"name": "legck"
+					},
+					{
+						"name": "legcs"
+					},
+					{
+						"name": "legcv"
+					},
+					{
+						"name": "legotter"
+					}
+				]
+			}
+		},
+		"defenses": {
+			"none": {
+				"2": [
+					{
+						"name": "legabm"
+					},
+					{
+						"name": "legapopupdef"
+					},
+					{
+						"name": "legbastion"
+					},
+					{
+						"name": "legbombard"
+					},
+					{
+						"name": "legflak"
+					},
+					{
+						"name": "leglraa"
+					},
+					{
+						"name": "leglrpc"
+					},
+					{
+						"name": "legperdition"
+					},
+					{
+						"name": "legsilo"
+					},
+					{
+						"name": "legstarfall"
+					}
+				],
+				"1": [
+					{
+						"name": "legacluster"
+					},
+					{
+						"name": "legcluster"
+					},
+					{
+						"name": "legdrag"
+					},
+					{
+						"name": "legdtr"
+					},
+					{
+						"name": "legforti"
+					},
+					{
+						"name": "leghive"
+					},
+					{
+						"name": "leglht"
+					},
+					{
+						"name": "leglupara"
+					},
+					{
+						"name": "legmg"
+					},
+					{
+						"name": "legrhapsis"
+					},
+					{
+						"name": "legrl"
+					}
+				],
+				"3": [
+					{
+						"name": "leggatet3"
+					}
+				]
+			}
+		},
+		"economy": {
+			"none": {
+				"2": [
+					{
+						"name": "legadveconv"
+					},
+					{
+						"name": "legadvestore"
+					},
+					{
+						"name": "legafus"
+					},
+					{
+						"name": "legageo"
+					},
+					{
+						"name": "legamstor"
+					},
+					{
+						"name": "legfus"
+					},
+					{
+						"name": "legmoho"
+					},
+					{
+						"name": "legmohobp"
+					},
+					{
+						"name": "legmohocon"
+					},
+					{
+						"name": "legmohoconct"
+					},
+					{
+						"name": "legmohoconin"
+					},
+					{
+						"name": "legrampart"
+					}
+				],
+				"1": [
+					{
+						"name": "legadvsol"
+					},
+					{
+						"name": "legeconv"
+					},
+					{
+						"name": "legestor"
+					},
+					{
+						"name": "leggeo"
+					},
+					{
+						"name": "legmex"
+					},
+					{
+						"name": "legmext15"
+					},
+					{
+						"name": "legmohobpct"
+					},
+					{
+						"name": "legmstor"
+					},
+					{
+						"name": "legsolar"
+					},
+					{
+						"name": "legwin"
+					}
+				]
+			}
+		},
+		"hovercraft": {
+			"none": {
+				"1": [
+					{
+						"name": "legah"
+					},
+					{
+						"name": "legcar"
+					},
+					{
+						"name": "legmh"
+					},
+					{
+						"name": "legner"
+					},
+					{
+						"name": "legsh"
+					}
+				]
+			}
+		},
+		"labs": {
+			"none": {
+				"2": [
+					{
+						"name": "legaap"
+					},
+					{
+						"name": "legalab"
+					},
+					{
+						"name": "legavp"
+					}
+				],
+				"1": [
+					{
+						"name": "legamphlab"
+					},
+					{
+						"name": "legap"
+					},
+					{
+						"name": "legfhp"
+					},
+					{
+						"name": "leghp"
+					},
+					{
+						"name": "legjim"
+					},
+					{
+						"name": "leglab"
+					},
+					{
+						"name": "legvp"
+					}
+				],
+				"3": [
+					{
+						"name": "leggant"
+					}
+				]
+			}
+		},
+		"other": {
+			"none": {
+				"1": [
+					{
+						"name": "legcom"
+					},
+					{
+						"name": "legvision"
+					}
+				]
+			},
+			"Commanders": {
+				"1": [
+					{
+						"name": "legcomecon"
+					},
+					{
+						"name": "legcomoff"
+					},
+					{
+						"name": "legcomt2com"
+					},
+					{
+						"name": "legcomt2def"
+					},
+					{
+						"name": "legcomt2off"
+					}
+				]
+			}
+		},
+		"legion evocom": {
+			"none": {
+				"1": [
+					{
+						"name": "legcombabyunits"
+					},
+					{
+						"name": "legcomlvl10"
+					},
+					{
+						"name": "legcomlvl2"
+					},
+					{
+						"name": "legcomlvl3"
+					},
+					{
+						"name": "legcomlvl4"
+					},
+					{
+						"name": "legcomlvl5"
+					},
+					{
+						"name": "legcomlvl6"
+					},
+					{
+						"name": "legcomlvl7"
+					},
+					{
+						"name": "legcomlvl8"
+					},
+					{
+						"name": "legcomlvl9"
+					},
+					{
+						"name": "legevodecom"
+					}
+				]
+			}
+		},
+		"seaconomy": {
+			"none": {
+				"1": [
+					{
+						"name": "legfeconv"
+					},
+					{
+						"name": "legtide"
+					},
+					{
+						"name": "leguwestore"
+					},
+					{
+						"name": "leguwgeo"
+					},
+					{
+						"name": "leguwmstore"
+					}
+				]
+			}
+		},
+		"seadefenses": {
+			"none": {
+				"1": [
+					{
+						"name": "legctl"
+					},
+					{
+						"name": "legfdrag"
+					},
+					{
+						"name": "legfhive"
+					},
+					{
+						"name": "legfmg"
+					},
+					{
+						"name": "legfrl"
+					},
+					{
+						"name": "legptl_deprecated"
+					},
+					{
+						"name": "legtl"
+					},
+					{
+						"name": "legtl_deprecated"
+					}
+				]
+			}
+		},
+		"seautility": {
+			"none": {
+				"1": [
+					{
+						"name": "legfrad"
+					}
+				]
+			}
+		},
+		"ships": {
+			"none": {
+				"1": [
+					{
+						"name": "leghastatus"
+					},
+					{
+						"name": "leghastatusalt"
+					},
+					{
+						"name": "legpontus"
+					},
+					{
+						"name": "legportent"
+					},
+					{
+						"name": "legstingray"
+					},
+					{
+						"name": "legtriarius"
+					},
+					{
+						"name": "legtriariusdrone"
+					},
+					{
+						"name": "legtriariusheatray"
+					},
+					{
+						"name": "legvelite"
+					}
+				],
+				"2": [
+					{
+						"name": "legoptio"
+					}
+				]
+			}
+		},
+		"t3": {
+			"none": {
+				"3": [
+					{
+						"name": "leegmech"
+					},
+					{
+						"name": "legbunk"
+					},
+					{
+						"name": "legeheatraymech"
+					},
+					{
+						"name": "legelrpcmech"
+					},
+					{
+						"name": "legerailtank"
+					},
+					{
+						"name": "legeshotgunmech"
+					},
+					{
+						"name": "legjav"
+					},
+					{
+						"name": "legkeres"
+					}
+				]
+			}
+		},
+		"utilities": {
+			"none": {
+				"2": [
+					{
+						"name": "legajam"
+					},
+					{
+						"name": "legarad"
+					},
+					{
+						"name": "legdeflector"
+					},
+					{
+						"name": "legsd"
+					},
+					{
+						"name": "legtarg"
+					}
+				],
+				"1": [
+					{
+						"name": "legeyes"
+					},
+					{
+						"name": "legjam"
+					},
+					{
+						"name": "legjuno"
+					},
+					{
+						"name": "legmine1"
+					},
+					{
+						"name": "legmine2"
+					},
+					{
+						"name": "legmine3"
+					},
+					{
+						"name": "legnanotc"
+					},
+					{
+						"name": "legnanotcplat"
+					},
+					{
+						"name": "legnanotct2"
+					},
+					{
+						"name": "legnanotct2plat"
+					},
+					{
+						"name": "legrad"
+					}
+				]
+			}
+		},
+		"vehicles": {
+			"none": {
+				"1": [
+					{
+						"name": "legamphtank"
+					},
+					{
+						"name": "legbar"
+					},
+					{
+						"name": "leggat"
+					},
+					{
+						"name": "leghades"
+					},
+					{
+						"name": "leghelios"
+					},
+					{
+						"name": "legmlv"
+					},
+					{
+						"name": "legrail"
+					},
+					{
+						"name": "legscout"
+					}
+				]
+			},
+			"T2  Vehicles": {
+				"2": [
+					{
+						"name": "legaheattank"
+					},
+					{
+						"name": "legamcluster"
+					},
+					{
+						"name": "legaskirmtank"
+					},
+					{
+						"name": "legavjam"
+					},
+					{
+						"name": "legavrad"
+					},
+					{
+						"name": "legavroc"
+					},
+					{
+						"name": "legfloat"
+					},
+					{
+						"name": "leginf"
+					},
+					{
+						"name": "legmed"
+					},
+					{
+						"name": "legmrv"
+					},
+					{
+						"name": "legvflak"
+					}
+				],
+				"1": [
+					{
+						"name": "legvcarry"
+					}
+				]
+			}
+		}
+	},
+	"raptor": {
+		"acid": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_bomber_acid_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_acid_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_acid_t4_v1"
+					},
+					{
+						"name": "raptor_allterrain_assault_acid_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_swarmer_acid_t2_v1"
+					},
+					{
+						"name": "raptor_land_assault_acid_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_acids_t2_v1"
+					}
+				]
+			}
+		},
+		"arty": {
+			"none": {
+				"1": [
+					{
+						"name": "raptorartillery"
+					},
+					{
+						"name": "raptor_allterrain_arty_basic_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_basic_t4_v1"
+					}
+				]
+			}
+		},
+		"assault": {
+			"Advanced": {
+				"1": [
+					{
+						"name": "raptor_allterrain_assault_basic_t4_v1"
+					},
+					{
+						"name": "raptor_allterrain_assault_basic_t4_v2"
+					},
+					{
+						"name": "raptor_land_assault_basic_t4_v1"
+					},
+					{
+						"name": "raptor_land_assault_basic_t4_v2"
+					}
+				]
+			},
+			"All Terrain": {
+				"1": [
+					{
+						"name": "raptor_allterrain_assault_basic_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_assault_basic_t2_v2"
+					},
+					{
+						"name": "raptor_allterrain_assault_basic_t2_v3"
+					}
+				]
+			},
+			"none": {
+				"1": [
+					{
+						"name": "raptor_land_assault_basic_t2_v1"
+					},
+					{
+						"name": "raptor_land_assault_basic_t2_v2"
+					},
+					{
+						"name": "raptor_land_assault_basic_t2_v3"
+					}
+				]
+			}
+		},
+		"bomber": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_bomber_basic_t1_v1"
+					},
+					{
+						"name": "raptor_air_bomber_basic_t2_v1"
+					},
+					{
+						"name": "raptor_air_bomber_basic_t2_v2"
+					},
+					{
+						"name": "raptor_air_bomber_basic_t4_v1"
+					},
+					{
+						"name": "raptor_air_bomber_basic_t4_v2"
+					}
+				]
+			}
+		},
+		"brood": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_bomber_brood_t4_v2"
+					},
+					{
+						"name": "raptor_air_bomber_brood_t4_v3"
+					},
+					{
+						"name": "raptor_air_bomber_brood_t4_v4"
+					},
+					{
+						"name": "raptor_allterrain_arty_brood_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_brood_t4_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_brood_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_brood_t3_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_brood_t4_v1"
+					}
+				]
+			}
+		},
+		"electric": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_bomber_emp_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_emp_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_arty_emp_t4_v1"
+					},
+					{
+						"name": "raptor_allterrain_assault_emp_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_swarmer_emp_t2_v1"
+					},
+					{
+						"name": "raptor_land_assault_emp_t2_v1"
+					},
+					{
+						"name": "raptor_land_kamikaze_emp_t2_v1"
+					},
+					{
+						"name": "raptor_land_kamikaze_emp_t4_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_emp_t2_v1"
+					}
+				]
+			}
+		},
+		"fighter": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_fighter_basic_t1_v1"
+					},
+					{
+						"name": "raptor_air_fighter_basic_t2_v1"
+					},
+					{
+						"name": "raptor_air_fighter_basic_t2_v2"
+					},
+					{
+						"name": "raptor_air_fighter_basic_t2_v3"
+					},
+					{
+						"name": "raptor_air_fighter_basic_t2_v4"
+					},
+					{
+						"name": "raptor_air_fighter_basic_t4_v1"
+					}
+				]
+			}
+		},
+		"flamer": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_allterrain_swarmer_fire_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_fire_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_fire_t4_v1"
+					}
+				]
+			}
+		},
+		"healer": {
+			"none": {
+				"1": [
+					{
+						"name": "raptorh1b"
+					},
+					{
+						"name": "raptor_land_swarmer_heal_t1_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_heal_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_heal_t3_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_heal_t4_v1"
+					}
+				]
+			}
+		},
+		"kamikaze": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_kamikaze_basic_t2_v1"
+					},
+					{
+						"name": "raptor_land_kamikaze_basic_t2_v1"
+					},
+					{
+						"name": "raptor_land_kamikaze_basic_t4_v1"
+					}
+				]
+			}
+		},
+		"miniqueen": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_matriarch_acid"
+					},
+					{
+						"name": "raptor_matriarch_basic"
+					},
+					{
+						"name": "raptor_matriarch_electric"
+					},
+					{
+						"name": "raptor_matriarch_fire"
+					},
+					{
+						"name": "raptor_matriarch_healer"
+					},
+					{
+						"name": "raptor_matriarch_spectre"
+					}
+				]
+			}
+		},
+		"overseer": {
+			"none": {
+				"1": [
+					{
+						"name": "raptorh5"
+					}
+				]
+			}
+		},
+		"queens": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_queen_easy"
+					},
+					{
+						"name": "raptor_queen_epic"
+					},
+					{
+						"name": "raptor_queen_hard"
+					},
+					{
+						"name": "raptor_queen_normal"
+					},
+					{
+						"name": "raptor_queen_veryeasy"
+					},
+					{
+						"name": "raptor_queen_veryhard"
+					}
+				]
+			}
+		},
+		"other": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_gunship_acid_t2_v1"
+					},
+					{
+						"name": "raptor_air_gunship_antiair_t2_v1"
+					},
+					{
+						"name": "raptor_air_gunship_basic_t2_v1"
+					},
+					{
+						"name": "raptor_air_gunship_emp_t2_v1"
+					},
+					{
+						"name": "raptor_air_gunship_fire_t2_v1"
+					}
+				]
+			}
+		},
+		"scout": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_air_scout_basic_t2_v1"
+					},
+					{
+						"name": "raptor_air_scout_basic_t3_v1"
+					},
+					{
+						"name": "raptor_air_scout_basic_t4_v1"
+					}
+				]
+			}
+		},
+		"spectre": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_land_assault_spectre_t2_v1"
+					},
+					{
+						"name": "raptor_land_assault_spectre_t4_v1"
+					},
+					{
+						"name": "raptor_land_spiker_spectre_t4_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_spectre_t3_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_spectre_t4_v1"
+					}
+				]
+			}
+		},
+		"spiker": {
+			"none": {
+				"1": [
+					{
+						"name": "raptor_land_spiker_basic_t2_v1"
+					},
+					{
+						"name": "raptor_land_spiker_basic_t4_v1"
+					}
+				]
+			}
+		},
+		"structures": {
+			"none": {
+				"2": [
+					{
+						"name": "raptor_antinuke"
+					}
+				],
+				"1": [
+					{
+						"name": "raptor_hive"
+					},
+					{
+						"name": "raptor_turret_acid_t2_v1"
+					},
+					{
+						"name": "raptor_turret_acid_t3_v1"
+					},
+					{
+						"name": "raptor_turret_acid_t4_v1"
+					},
+					{
+						"name": "raptor_turret_antiair_t2_v1"
+					},
+					{
+						"name": "raptor_turret_antiair_t3_v1"
+					},
+					{
+						"name": "raptor_turret_antiair_t4_v1"
+					},
+					{
+						"name": "raptor_turret_antinuke_t2_v1"
+					},
+					{
+						"name": "raptor_turret_antinuke_t3_v1"
+					},
+					{
+						"name": "raptor_turret_basic_t2_v1"
+					},
+					{
+						"name": "raptor_turret_basic_t3_v1"
+					},
+					{
+						"name": "raptor_turret_basic_t4_v1"
+					},
+					{
+						"name": "raptor_turret_burrow_t2_v1"
+					},
+					{
+						"name": "raptor_turret_emp_t2_v1"
+					},
+					{
+						"name": "raptor_turret_emp_t3_v1"
+					},
+					{
+						"name": "raptor_turret_emp_t4_v1"
+					},
+					{
+						"name": "raptor_turret_meteor_t4_v1"
+					},
+					{
+						"name": "raptor_worm_green"
+					}
+				]
+			}
+		},
+		"swarmer": {
+			"Advanced": {
+				"1": [
+					{
+						"name": "raptor_land_swarmer_basic_t4_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t4_v2"
+					}
+				]
+			},
+			"All Terrain": {
+				"1": [
+					{
+						"name": "raptor_6legged_l"
+					},
+					{
+						"name": "raptor_allterrain_swarmer_basic_t2_v1"
+					},
+					{
+						"name": "raptor_allterrain_swarmer_basic_t3_v1"
+					},
+					{
+						"name": "raptor_allterrain_swarmer_basic_t4_v1"
+					}
+				]
+			},
+			"none": {
+				"1": [
+					{
+						"name": "raptor_land_swarmer_basic_t1_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t2_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t2_v2"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t2_v3"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t2_v4"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t3_v1"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t3_v2"
+					},
+					{
+						"name": "raptor_land_swarmer_basic_t3_v3"
+					}
+				]
+			}
+		}
+	},
+	"scavengers": {
+		"air": {
+			"none": {
+				"3": [
+					{
+						"name": "armfepocht4"
+					},
+					{
+						"name": "armlichet4"
+					},
+					{
+						"name": "armthundt4"
+					},
+					{
+						"name": "corcrwt4"
+					},
+					{
+						"name": "cordronecarryair"
+					},
+					{
+						"name": "corfblackhyt4"
+					},
+					{
+						"name": "legfortt4"
+					}
+				],
+				"1": [
+					{
+						"name": "armfify"
+					},
+					{
+						"name": "armminebomber"
+					},
+					{
+						"name": "cords"
+					},
+					{
+						"name": "legmost3"
+					}
+				],
+				"2": [
+					{
+						"name": "corcrw"
+					}
+				]
+			}
+		},
+		"boss": {
+			"none": {
+				"4": [
+					{
+						"name": "armcomboss"
+					},
+					{
+						"name": "corcomboss"
+					}
+				],
+				"1": [
+					{
+						"name": "armscavengerbossv2"
+					},
+					{
+						"name": "babyscavbossunits"
+					},
+					{
+						"name": "scavengerbossv4"
+					}
+				]
+			}
+		},
+		"bots": {
+			"none": {
+				"3": [
+					{
+						"name": "armassimilator"
+					},
+					{
+						"name": "armlunchbox"
+					},
+					{
+						"name": "armmeatball"
+					},
+					{
+						"name": "armpwt4"
+					},
+					{
+						"name": "armsptkt4"
+					},
+					{
+						"name": "corkarganetht4"
+					},
+					{
+						"name": "corthermite"
+					},
+					{
+						"name": "legpede"
+					},
+					{
+						"name": "legsrailt4"
+					}
+				],
+				"1": [
+					{
+						"name": "corakt4"
+					},
+					{
+						"name": "corkark"
+					},
+					{
+						"name": "leggobt3"
+					}
+				],
+				"2": [
+					{
+						"name": "cordeadeye"
+					},
+					{
+						"name": "cormandot4"
+					}
+				]
+			}
+		},
+		"buildings": {
+			"Defense Offense": {
+				"3": [
+					{
+						"name": "armannit3"
+					},
+					{
+						"name": "cordoomt3"
+					}
+				],
+				"2": [
+					{
+						"name": "armbotrail"
+					},
+					{
+						"name": "armlwall"
+					},
+					{
+						"name": "armminivulc"
+					},
+					{
+						"name": "corhllllt"
+					},
+					{
+						"name": "corminibuzz"
+					},
+					{
+						"name": "cormwall"
+					},
+					{
+						"name": "legministarfall"
+					},
+					{
+						"name": "legrwall"
+					}
+				],
+				"1": [
+					{
+						"name": "corscavdrag"
+					},
+					{
+						"name": "corscavdtf"
+					},
+					{
+						"name": "corscavdtl"
+					},
+					{
+						"name": "corscavdtm"
+					},
+					{
+						"name": "corscavfort"
+					},
+					{
+						"name": "legdtf"
+					},
+					{
+						"name": "legdtl"
+					},
+					{
+						"name": "legdtm"
+					}
+				]
+			},
+			"Economy": {
+				"3": [
+					{
+						"name": "armafust3"
+					},
+					{
+						"name": "armmmkrt3"
+					},
+					{
+						"name": "corafust3"
+					},
+					{
+						"name": "cormmkrt3"
+					},
+					{
+						"name": "legadveconvt3"
+					},
+					{
+						"name": "legafust3"
+					}
+				],
+				"2": [
+					{
+						"name": "armwint2"
+					},
+					{
+						"name": "corwint2"
+					},
+					{
+						"name": "legwint2"
+					}
+				]
+			},
+			"Factories": {
+				"3": [
+					{
+						"name": "armapt3"
+					},
+					{
+						"name": "corapt3"
+					},
+					{
+						"name": "legapt3"
+					}
+				]
+			},
+			"Utility": {
+				"3": [
+					{
+						"name": "armgatet3"
+					},
+					{
+						"name": "corgatet3"
+					}
+				],
+				"1": [
+					{
+						"name": "scavbeacon_t1"
+					},
+					{
+						"name": "scavbeacon_t2"
+					},
+					{
+						"name": "scavbeacon_t3"
+					},
+					{
+						"name": "scavbeacon_t4"
+					},
+					{
+						"name": "scavsafeareabeacon"
+					}
+				]
+			}
+		},
+		"other": {
+			"none": {
+				"1": [
+					{
+						"name": "scavempspawner"
+					},
+					{
+						"name": "scavengerdroppod"
+					},
+					{
+						"name": "scavengerdroppodfriendly"
+					},
+					{
+						"name": "scavmists"
+					},
+					{
+						"name": "scavtacnukespawner"
+					}
+				]
+			}
+		},
+		"ships": {
+			"none": {
+				"3": [
+					{
+						"name": "armdecadet3"
+					},
+					{
+						"name": "armpshipt3"
+					},
+					{
+						"name": "armserpt3"
+					},
+					{
+						"name": "coresuppt3"
+					},
+					{
+						"name": "corslrpc"
+					}
+				],
+				"2": [
+					{
+						"name": "armptt2"
+					}
+				]
+			}
+		},
+		"vehicles": {
+			"none": {
+				"3": [
+					{
+						"name": "armdronecarryland"
+					},
+					{
+						"name": "armrattet4"
+					},
+					{
+						"name": "armvadert4"
+					},
+					{
+						"name": "corgolt4"
+					}
+				],
+				"1": [
+					{
+						"name": "armzapper"
+					},
+					{
+						"name": "cortorch"
+					}
+				],
+				"2": [
+					{
+						"name": "corforge"
+					},
+					{
+						"name": "corftiger"
+					},
+					{
+						"name": "corgatreap"
 					}
 				]
 			}

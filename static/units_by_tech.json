@@ -223,6 +223,9 @@
 			"name": "armcomcon"
 		},
 		{
+			"name": "armcomnew"
+		},
+		{
 			"name": "armah"
 		},
 		{
@@ -673,6 +676,9 @@
 			"name": "legmineb"
 		},
 		{
+			"name": "legaabot"
+		},
+		{
 			"name": "legbal"
 		},
 		{
@@ -686,6 +692,9 @@
 		},
 		{
 			"name": "leglob"
+		},
+		{
+			"name": "legrezbot"
 		},
 		{
 			"name": "legca"
@@ -784,7 +793,7 @@
 			"name": "legsh"
 		},
 		{
-			"name": "legamsub"
+			"name": "legamphlab"
 		},
 		{
 			"name": "legap"
@@ -859,13 +868,25 @@
 			"name": "legvision"
 		},
 		{
-			"name": "legfmkr"
+			"name": "legfeconv"
 		},
 		{
 			"name": "legtide"
 		},
 		{
+			"name": "leguwestore"
+		},
+		{
+			"name": "leguwgeo"
+		},
+		{
+			"name": "leguwmstore"
+		},
+		{
 			"name": "legctl"
+		},
+		{
+			"name": "legfdrag"
 		},
 		{
 			"name": "legfhive"
@@ -916,13 +937,13 @@
 			"name": "legvelite"
 		},
 		{
-			"name": "cornanotc2plat"
-		},
-		{
 			"name": "legeyes"
 		},
 		{
 			"name": "legjam"
+		},
+		{
+			"name": "legjuno"
 		},
 		{
 			"name": "legmine1"
@@ -941,6 +962,9 @@
 		},
 		{
 			"name": "legnanotct2"
+		},
+		{
+			"name": "legnanotct2plat"
 		},
 		{
 			"name": "legrad"
@@ -2223,6 +2247,9 @@
 			"name": "corvroc"
 		},
 		{
+			"name": "legafigdef"
+		},
+		{
 			"name": "legatorpbomber"
 		},
 		{
@@ -2247,6 +2274,9 @@
 			"name": "legwhisper"
 		},
 		{
+			"name": "legadvaabot"
+		},
+		{
 			"name": "legamph"
 		},
 		{
@@ -2254,6 +2284,9 @@
 		},
 		{
 			"name": "legdecom"
+		},
+		{
+			"name": "leghrk"
 		},
 		{
 			"name": "leginc"
@@ -2290,6 +2323,9 @@
 		},
 		{
 			"name": "legabm"
+		},
+		{
+			"name": "legapopupdef"
 		},
 		{
 			"name": "legbastion"
